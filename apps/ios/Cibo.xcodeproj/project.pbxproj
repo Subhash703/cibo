@@ -1,0 +1,727 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		011B3C00A5EBEFB238864808 /* ProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6678B0A33867F24A4DC0F603 /* ProcessingView.swift */; };
+		01D7146FB1E021DD5BEBF2D8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF361A1AFDB74A39188C0D3 /* Models.swift */; };
+		0CF5577E142624F8D56321F3 /* CiboWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EF3286B101F80F804DB63320 /* CiboWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0DED7CBE4087417898EDC898 /* CiboWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212413C0B6BF03AFA6DCE402 /* CiboWidgetBundle.swift */; };
+		0F02F6138D8EFF74A80B6856 /* StatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E1FB9352CA5067EBCFDCB2 /* StatusPill.swift */; };
+		16DBFF822D423999ED48E953 /* ProfileScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44ECC389742094070BB7959 /* ProfileScreen.swift */; };
+		19610725FCCF6D0F88A0ABAE /* CiboApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21B7F47DFF11D4A47D296000 /* CiboApp.swift */; };
+		1D99B519211A115F4FA8FCCC /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF361A1AFDB74A39188C0D3 /* Models.swift */; };
+		26749E36D2930B4634B0B262 /* PlusJakartaSans-Italic-VariableFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FDFFD1D64F121007ABCE23A0 /* PlusJakartaSans-Italic-VariableFont.ttf */; };
+		43727482E461A53093AE70FA /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */; };
+		4C190DD872AB93D6E1FBF821 /* SignInScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64CA3252F7C82750EBAB7AA7 /* SignInScreen.swift */; };
+		4C883DF0F3C1FE352DE17986 /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */; };
+		51A70372C87598B4037B0ED5 /* CiboShortcutsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F180171AAFFBC1667C6834C /* CiboShortcutsProvider.swift */; };
+		53EF6BA7498E7CD017F8F113 /* CartVerdictAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */; };
+		67E143C0D3202AFB8585024F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6006958221F32B312B8A7A39 /* Assets.xcassets */; };
+		6A6DD1215E56947936EA34A2 /* DashboardScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 785F8E3F9813E794537B694E /* DashboardScreen.swift */; };
+		6F5BF0BFB08F357DF190703C /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */; };
+		752AB99AB426682619FC582B /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060B20CB4CCF1CEF0D9BB0CD /* PrimaryButton.swift */; };
+		78A046495B0A7E95DE8AA5AB /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA69DBB6F9FCB1F6197531A4 /* RootView.swift */; };
+		78B79FE37AACA6FC1888B3A4 /* KcalRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3F99C86EBB22B6B08F62B9 /* KcalRing.swift */; };
+		7C655C59B294EFED4B9DA6BA /* AuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45AED3E8635C805FD95A5719 /* AuthStore.swift */; };
+		7DDD740099E99BD2DA6D65E4 /* StatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E1FB9352CA5067EBCFDCB2 /* StatusPill.swift */; };
+		8BA7C37C3B908D28544D115F /* AnalyzeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16AA6CBCC8C003A569C276F /* AnalyzeClient.swift */; };
+		8BF185780BF09342312DA4BA /* PlateScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B321FA53FAB69ABB9A5488E6 /* PlateScreen.swift */; };
+		902427C7674588FD10AE5919 /* KcalRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3F99C86EBB22B6B08F62B9 /* KcalRing.swift */; };
+		9540D42D7BB27591089A9339 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 68677BF29FF339F5E3BAB553 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A6344F40E91865D6531F7503 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4933B5FA14B4DFD95F4F4E5 /* AppGroup.swift */; };
+		A7DD71586BECE41AE94E7FD3 /* VerdictBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60FC8A704944ACEF15960EE3 /* VerdictBanner.swift */; };
+		AC03C56F9AED63085E78B1A5 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8F1F61A47E3D0CC8267B8A /* GlassCard.swift */; };
+		ACED7EE4B8452A778F0C0404 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E618472C3DE55B39F59C3383 /* Theme.swift */; };
+		B944F2621647111A99D12F2F /* Fraunces-VariableFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = ACB58F4FBE34FF56B151E809 /* Fraunces-VariableFont.ttf */; };
+		BCD8D5AA7F93B5ED34131AAD /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E618472C3DE55B39F59C3383 /* Theme.swift */; };
+		BE6AC770224F1CC60B74A199 /* CartVerdictAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */; };
+		BEEAA6F93EF35C3DE4F76779 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8F1F61A47E3D0CC8267B8A /* GlassCard.swift */; };
+		C27EE5F68DC42FB392DE24A1 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4933B5FA14B4DFD95F4F4E5 /* AppGroup.swift */; };
+		CF1F935B0FC4E3D178CFB8E3 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060B20CB4CCF1CEF0D9BB0CD /* PrimaryButton.swift */; };
+		D19F0CD390496572E81A8FDE /* PlusJakartaSans-VariableFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4092DB80D1BEA5D87096A975 /* PlusJakartaSans-VariableFont.ttf */; };
+		D56F7E42A4F5143E1FCAF40D /* VerdictBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60FC8A704944ACEF15960EE3 /* VerdictBanner.swift */; };
+		DB763AE80AC9B1831DF16A46 /* AnalyzeCartIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3441AA9E6350F2671A730D4C /* AnalyzeCartIntent.swift */; };
+		DE2A854D6A441E792FB8E6B3 /* CartVerdictAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */; };
+		DF52BFDACAD61F8A65091A1F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E618472C3DE55B39F59C3383 /* Theme.swift */; };
+		E32CA6DCE3E566BE3202F5D5 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8808F4E1401C78F746954252 /* InsightCard.swift */; };
+		E4B7121FB2B386BB82B25C03 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8808F4E1401C78F746954252 /* InsightCard.swift */; };
+		EEDC936DAD91B7F48348ADF3 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DC3A4B567A983C860B523A /* OnboardingFlow.swift */; };
+		EF5CFD2CE5FC7F6DC806F5A4 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D332B1C76877699E9E34CAB8 /* ShareViewController.swift */; };
+		F5820575BCC69FC416F40F1F /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4933B5FA14B4DFD95F4F4E5 /* AppGroup.swift */; };
+		FC9D02643589EDE3031052FE /* AnalyzeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16AA6CBCC8C003A569C276F /* AnalyzeClient.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		19F300671C818EC2DC8B112E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1DC93C2188E83B630BA93EE9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 761FDAE857B31DB0AB07B951;
+			remoteInfo = ShareExtension;
+		};
+		A8FCD528547B75C3E39FD4FA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1DC93C2188E83B630BA93EE9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CB3D523A395DAF8E74705AEB;
+			remoteInfo = CiboWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9E468192DE5144B50F84996F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				9540D42D7BB27591089A9339 /* ShareExtension.appex in Embed Foundation Extensions */,
+				0CF5577E142624F8D56321F3 /* CiboWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		060B20CB4CCF1CEF0D9BB0CD /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
+		082726FB0458C0724FE0DAC1 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
+		212413C0B6BF03AFA6DCE402 /* CiboWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CiboWidgetBundle.swift; sourceTree = "<group>"; };
+		21B7F47DFF11D4A47D296000 /* CiboApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CiboApp.swift; sourceTree = "<group>"; };
+		2DF361A1AFDB74A39188C0D3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		3441AA9E6350F2671A730D4C /* AnalyzeCartIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeCartIntent.swift; sourceTree = "<group>"; };
+		3F180171AAFFBC1667C6834C /* CiboShortcutsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CiboShortcutsProvider.swift; sourceTree = "<group>"; };
+		4092DB80D1BEA5D87096A975 /* PlusJakartaSans-VariableFont.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-VariableFont.ttf"; sourceTree = "<group>"; };
+		45AED3E8635C805FD95A5719 /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
+		4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
+		4B8F1F61A47E3D0CC8267B8A /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
+		54E1FB9352CA5067EBCFDCB2 /* StatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPill.swift; sourceTree = "<group>"; };
+		6006958221F32B312B8A7A39 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		60FC8A704944ACEF15960EE3 /* VerdictBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerdictBanner.swift; sourceTree = "<group>"; };
+		64CA3252F7C82750EBAB7AA7 /* SignInScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInScreen.swift; sourceTree = "<group>"; };
+		6678B0A33867F24A4DC0F603 /* ProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingView.swift; sourceTree = "<group>"; };
+		68677BF29FF339F5E3BAB553 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		785F8E3F9813E794537B694E /* DashboardScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardScreen.swift; sourceTree = "<group>"; };
+		8808F4E1401C78F746954252 /* InsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCard.swift; sourceTree = "<group>"; };
+		ACB58F4FBE34FF56B151E809 /* Fraunces-VariableFont.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-VariableFont.ttf"; sourceTree = "<group>"; };
+		B321FA53FAB69ABB9A5488E6 /* PlateScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateScreen.swift; sourceTree = "<group>"; };
+		B4933B5FA14B4DFD95F4F4E5 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
+		BB3F99C86EBB22B6B08F62B9 /* KcalRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KcalRing.swift; sourceTree = "<group>"; };
+		BCF84782EA983536B8939997 /* Cibo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cibo.entitlements; sourceTree = "<group>"; };
+		C16AA6CBCC8C003A569C276F /* AnalyzeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeClient.swift; sourceTree = "<group>"; };
+		C6DC3A4B567A983C860B523A /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
+		CA69DBB6F9FCB1F6197531A4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		D332B1C76877699E9E34CAB8 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		DA781F795FE77328BAF8ECCE /* CiboWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CiboWidgets.entitlements; sourceTree = "<group>"; };
+		DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartVerdictAttributes.swift; sourceTree = "<group>"; };
+		E618472C3DE55B39F59C3383 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		EF3286B101F80F804DB63320 /* CiboWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CiboWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F44ECC389742094070BB7959 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
+		FB2D2A82F1417D26EB2CF42E /* Cibo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cibo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FDFFD1D64F121007ABCE23A0 /* PlusJakartaSans-Italic-VariableFont.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Italic-VariableFont.ttf"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		17C40C0066A2C4A33174E41E /* State */ = {
+			isa = PBXGroup;
+			children = (
+				45AED3E8635C805FD95A5719 /* AuthStore.swift */,
+			);
+			path = State;
+			sourceTree = "<group>";
+		};
+		50DDDF07385BC0C04B502093 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				ACB58F4FBE34FF56B151E809 /* Fraunces-VariableFont.ttf */,
+				FDFFD1D64F121007ABCE23A0 /* PlusJakartaSans-Italic-VariableFont.ttf */,
+				4092DB80D1BEA5D87096A975 /* PlusJakartaSans-VariableFont.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		5955FC5DBE3973D09577147F /* CiboWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				212413C0B6BF03AFA6DCE402 /* CiboWidgetBundle.swift */,
+				DA781F795FE77328BAF8ECCE /* CiboWidgets.entitlements */,
+			);
+			path = CiboWidgets;
+			sourceTree = "<group>";
+		};
+		5AECF1165805B8F0FD649F92 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				3441AA9E6350F2671A730D4C /* AnalyzeCartIntent.swift */,
+				3F180171AAFFBC1667C6834C /* CiboShortcutsProvider.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		5FF3DAC22912C4FDF7162CA1 /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				6678B0A33867F24A4DC0F603 /* ProcessingView.swift */,
+				082726FB0458C0724FE0DAC1 /* ShareExtension.entitlements */,
+				D332B1C76877699E9E34CAB8 /* ShareViewController.swift */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		7414DD79895F16128C1B6E10 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				C16AA6CBCC8C003A569C276F /* AnalyzeClient.swift */,
+				2DF361A1AFDB74A39188C0D3 /* Models.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		7D63B3EB0A562BD3DAC6DB7C /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				785F8E3F9813E794537B694E /* DashboardScreen.swift */,
+				C6DC3A4B567A983C860B523A /* OnboardingFlow.swift */,
+				B321FA53FAB69ABB9A5488E6 /* PlateScreen.swift */,
+				F44ECC389742094070BB7959 /* ProfileScreen.swift */,
+				CA69DBB6F9FCB1F6197531A4 /* RootView.swift */,
+				64CA3252F7C82750EBAB7AA7 /* SignInScreen.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		A056C9050E0009F7EB531CC0 = {
+			isa = PBXGroup;
+			children = (
+				B52A790FA58CF7482AA032B9 /* Cibo */,
+				5955FC5DBE3973D09577147F /* CiboWidgets */,
+				5FF3DAC22912C4FDF7162CA1 /* ShareExtension */,
+				FBA7A482593DB38E95AB3EF0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B52A790FA58CF7482AA032B9 /* Cibo */ = {
+			isa = PBXGroup;
+			children = (
+				6006958221F32B312B8A7A39 /* Assets.xcassets */,
+				BCF84782EA983536B8939997 /* Cibo.entitlements */,
+				21B7F47DFF11D4A47D296000 /* CiboApp.swift */,
+				E618472C3DE55B39F59C3383 /* Theme.swift */,
+				BC6996FBB634293924783E30 /* Components */,
+				5AECF1165805B8F0FD649F92 /* Intents */,
+				7414DD79895F16128C1B6E10 /* Network */,
+				FA7FBF455918081B86C446D1 /* Resources */,
+				7D63B3EB0A562BD3DAC6DB7C /* Screens */,
+				C06E79237E4CCBC04335E64B /* Shared */,
+				17C40C0066A2C4A33174E41E /* State */,
+			);
+			path = Cibo;
+			sourceTree = "<group>";
+		};
+		BC6996FBB634293924783E30 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				4B8F1F61A47E3D0CC8267B8A /* GlassCard.swift */,
+				8808F4E1401C78F746954252 /* InsightCard.swift */,
+				BB3F99C86EBB22B6B08F62B9 /* KcalRing.swift */,
+				060B20CB4CCF1CEF0D9BB0CD /* PrimaryButton.swift */,
+				54E1FB9352CA5067EBCFDCB2 /* StatusPill.swift */,
+				60FC8A704944ACEF15960EE3 /* VerdictBanner.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		C06E79237E4CCBC04335E64B /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				B4933B5FA14B4DFD95F4F4E5 /* AppGroup.swift */,
+				DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */,
+				4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		FA7FBF455918081B86C446D1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				50DDDF07385BC0C04B502093 /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		FBA7A482593DB38E95AB3EF0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FB2D2A82F1417D26EB2CF42E /* Cibo.app */,
+				EF3286B101F80F804DB63320 /* CiboWidgets.appex */,
+				68677BF29FF339F5E3BAB553 /* ShareExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3D85744728668EFB4B1E860E /* Cibo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F8E7CFD3AA5B05D69F94864 /* Build configuration list for PBXNativeTarget "Cibo" */;
+			buildPhases = (
+				5BEE47BD51D1468AB77DBB32 /* Sources */,
+				4CA5F28FCA92234C434E7A30 /* Resources */,
+				9E468192DE5144B50F84996F /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EF537635134ECB6431E43990 /* PBXTargetDependency */,
+				BD0E227911E1344D2419C9D2 /* PBXTargetDependency */,
+			);
+			name = Cibo;
+			packageProductDependencies = (
+			);
+			productName = Cibo;
+			productReference = FB2D2A82F1417D26EB2CF42E /* Cibo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		761FDAE857B31DB0AB07B951 /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 75E7FC857F061D383C6F3D36 /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				0219655CC3DAD159B207249E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtension;
+			packageProductDependencies = (
+			);
+			productName = ShareExtension;
+			productReference = 68677BF29FF339F5E3BAB553 /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		CB3D523A395DAF8E74705AEB /* CiboWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1888C39CA4E5C0FDB2CCAC11 /* Build configuration list for PBXNativeTarget "CiboWidgets" */;
+			buildPhases = (
+				3505971FDF5E303695F7DFE8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CiboWidgets;
+			packageProductDependencies = (
+			);
+			productName = CiboWidgets;
+			productReference = EF3286B101F80F804DB63320 /* CiboWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1DC93C2188E83B630BA93EE9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = 11655E3337DCC331A36F29EC /* Build configuration list for PBXProject "Cibo" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A056C9050E0009F7EB531CC0;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = FBA7A482593DB38E95AB3EF0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3D85744728668EFB4B1E860E /* Cibo */,
+				CB3D523A395DAF8E74705AEB /* CiboWidgets */,
+				761FDAE857B31DB0AB07B951 /* ShareExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4CA5F28FCA92234C434E7A30 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67E143C0D3202AFB8585024F /* Assets.xcassets in Resources */,
+				B944F2621647111A99D12F2F /* Fraunces-VariableFont.ttf in Resources */,
+				26749E36D2930B4634B0B262 /* PlusJakartaSans-Italic-VariableFont.ttf in Resources */,
+				D19F0CD390496572E81A8FDE /* PlusJakartaSans-VariableFont.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0219655CC3DAD159B207249E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8BA7C37C3B908D28544D115F /* AnalyzeClient.swift in Sources */,
+				A6344F40E91865D6531F7503 /* AppGroup.swift in Sources */,
+				BE6AC770224F1CC60B74A199 /* CartVerdictAttributes.swift in Sources */,
+				AC03C56F9AED63085E78B1A5 /* GlassCard.swift in Sources */,
+				E32CA6DCE3E566BE3202F5D5 /* InsightCard.swift in Sources */,
+				78B79FE37AACA6FC1888B3A4 /* KcalRing.swift in Sources */,
+				6F5BF0BFB08F357DF190703C /* LiveActivityController.swift in Sources */,
+				1D99B519211A115F4FA8FCCC /* Models.swift in Sources */,
+				CF1F935B0FC4E3D178CFB8E3 /* PrimaryButton.swift in Sources */,
+				011B3C00A5EBEFB238864808 /* ProcessingView.swift in Sources */,
+				EF5CFD2CE5FC7F6DC806F5A4 /* ShareViewController.swift in Sources */,
+				0F02F6138D8EFF74A80B6856 /* StatusPill.swift in Sources */,
+				ACED7EE4B8452A778F0C0404 /* Theme.swift in Sources */,
+				D56F7E42A4F5143E1FCAF40D /* VerdictBanner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3505971FDF5E303695F7DFE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C27EE5F68DC42FB392DE24A1 /* AppGroup.swift in Sources */,
+				53EF6BA7498E7CD017F8F113 /* CartVerdictAttributes.swift in Sources */,
+				0DED7CBE4087417898EDC898 /* CiboWidgetBundle.swift in Sources */,
+				43727482E461A53093AE70FA /* LiveActivityController.swift in Sources */,
+				DF52BFDACAD61F8A65091A1F /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5BEE47BD51D1468AB77DBB32 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB763AE80AC9B1831DF16A46 /* AnalyzeCartIntent.swift in Sources */,
+				FC9D02643589EDE3031052FE /* AnalyzeClient.swift in Sources */,
+				F5820575BCC69FC416F40F1F /* AppGroup.swift in Sources */,
+				7C655C59B294EFED4B9DA6BA /* AuthStore.swift in Sources */,
+				DE2A854D6A441E792FB8E6B3 /* CartVerdictAttributes.swift in Sources */,
+				19610725FCCF6D0F88A0ABAE /* CiboApp.swift in Sources */,
+				51A70372C87598B4037B0ED5 /* CiboShortcutsProvider.swift in Sources */,
+				6A6DD1215E56947936EA34A2 /* DashboardScreen.swift in Sources */,
+				BEEAA6F93EF35C3DE4F76779 /* GlassCard.swift in Sources */,
+				E4B7121FB2B386BB82B25C03 /* InsightCard.swift in Sources */,
+				902427C7674588FD10AE5919 /* KcalRing.swift in Sources */,
+				4C883DF0F3C1FE352DE17986 /* LiveActivityController.swift in Sources */,
+				01D7146FB1E021DD5BEBF2D8 /* Models.swift in Sources */,
+				EEDC936DAD91B7F48348ADF3 /* OnboardingFlow.swift in Sources */,
+				8BF185780BF09342312DA4BA /* PlateScreen.swift in Sources */,
+				752AB99AB426682619FC582B /* PrimaryButton.swift in Sources */,
+				16DBFF822D423999ED48E953 /* ProfileScreen.swift in Sources */,
+				78A046495B0A7E95DE8AA5AB /* RootView.swift in Sources */,
+				4C190DD872AB93D6E1FBF821 /* SignInScreen.swift in Sources */,
+				7DDD740099E99BD2DA6D65E4 /* StatusPill.swift in Sources */,
+				BCD8D5AA7F93B5ED34131AAD /* Theme.swift in Sources */,
+				A7DD71586BECE41AE94E7FD3 /* VerdictBanner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BD0E227911E1344D2419C9D2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CB3D523A395DAF8E74705AEB /* CiboWidgets */;
+			targetProxy = A8FCD528547B75C3E39FD4FA /* PBXContainerItemProxy */;
+		};
+		EF537635134ECB6431E43990 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 761FDAE857B31DB0AB07B951 /* ShareExtension */;
+			targetProxy = 19F300671C818EC2DC8B112E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		02FE17DB98CABE12B1BACB38 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CIBO_API_BASE_URL = "https://cibo-api-op1m.onrender.com";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = A97C99PCT4;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Cibo/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.foodlens.cibo;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		1BE1D4EACA78CA4FEC136412 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		4CA0996AB02972BA2519876B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CIBO_API_BASE_URL = "https://cibo-api-op1m.onrender.com";
+				DEVELOPMENT_TEAM = A97C99PCT4;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.foodlens.cibo.share;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6031113653F45B70A2080C4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CIBO_API_BASE_URL = "https://cibo-api-op1m.onrender.com";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = A97C99PCT4;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Cibo/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.foodlens.cibo;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		89933FB8144CC488FCBFF5B5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = A97C99PCT4;
+				INFOPLIST_FILE = CiboWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.foodlens.cibo.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BE12E6815A4BF36326E04404 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CIBO_API_BASE_URL = "https://cibo-api-op1m.onrender.com";
+				DEVELOPMENT_TEAM = A97C99PCT4;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.foodlens.cibo.share;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C1B7E9A5AB097518076C95D4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = A97C99PCT4;
+				INFOPLIST_FILE = CiboWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.foodlens.cibo.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		EB867E812B909C7C7BF63042 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		11655E3337DCC331A36F29EC /* Build configuration list for PBXProject "Cibo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1BE1D4EACA78CA4FEC136412 /* Debug */,
+				EB867E812B909C7C7BF63042 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1888C39CA4E5C0FDB2CCAC11 /* Build configuration list for PBXNativeTarget "CiboWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				89933FB8144CC488FCBFF5B5 /* Debug */,
+				C1B7E9A5AB097518076C95D4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4F8E7CFD3AA5B05D69F94864 /* Build configuration list for PBXNativeTarget "Cibo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6031113653F45B70A2080C4A /* Debug */,
+				02FE17DB98CABE12B1BACB38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		75E7FC857F061D383C6F3D36 /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4CA0996AB02972BA2519876B /* Debug */,
+				BE12E6815A4BF36326E04404 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1DC93C2188E83B630BA93EE9 /* Project object */;
+}
