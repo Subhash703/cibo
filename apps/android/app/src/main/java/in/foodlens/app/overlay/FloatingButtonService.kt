@@ -114,7 +114,7 @@ class FloatingButtonService : Service() {
         )
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Cibo is ready")
-            .setContentText("The bubble appears only when you open a food app.")
+            .setContentText("The Cibo button appears only when you open a food app.")
             .setSmallIcon(android.R.drawable.ic_menu_view)
             .setOngoing(true)
             .build()

@@ -1,8 +1,12 @@
 package `in`.foodlens.app
 
+import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -63,6 +67,7 @@ import `in`.foodlens.app.auth.UserProfile
 import `in`.foodlens.app.foreground.ForegroundAppPoller
 import `in`.foodlens.app.network.AnalyzeClient
 import `in`.foodlens.app.network.ProfileUpdate
+import `in`.foodlens.app.network.toProfile
 import `in`.foodlens.app.overlay.FloatingButtonService
 import kotlinx.coroutines.launch
 
@@ -82,6 +87,7 @@ class MainActivity : ComponentActivity() {
 
     private var overlayGranted by mutableStateOf(false)
     private var usageGranted by mutableStateOf(false)
+    private var batteryUnrestricted by mutableStateOf(true)
     private var step by mutableStateOf(OnboardingStep.Welcome)
     private var screen by mutableStateOf(AppScreen.ONBOARDING)
     private var tab by mutableStateOf(MainTab.HOME)
@@ -200,6 +206,11 @@ class MainActivity : ComponentActivity() {
                                             onStopBubble = {
                                                 FloatingButtonService.stop(this@MainActivity)
                                             },
+                                            onAllowUnrestrictedBattery = if (batteryUnrestricted) {
+                                                null
+                                            } else {
+                                                ::requestBatteryUnrestricted
+                                            },
                                         )
                                         MainTab.PLATE -> PlateScreen(
                                             user = user,
@@ -273,13 +284,7 @@ class MainActivity : ComponentActivity() {
         } else {
             analyzeClient.login(email, password)
         }
-        val profile = UserProfile(
-            email = response.user.email,
-            name = response.user.name,
-            picture = response.user.picture,
-            dailyKcalTarget = response.user.dailyKcalTarget,
-        )
-        foodLensApp.authState.setSignedIn(profile, response.token)
+        foodLensApp.authState.setSignedIn(response.user.toProfile(), response.token)
     }
 
     private suspend fun saveProfile(updated: UserProfile) {
@@ -295,25 +300,14 @@ class MainActivity : ComponentActivity() {
                 activityLevel = updated.activityLevel,
             ),
         )
-        foodLensApp.authState.setProfile(
-            UserProfile(
-                email = server.email,
-                name = server.name,
-                picture = server.picture,
-                dailyKcalTarget = server.dailyKcalTarget,
-                birthYear = server.birthYear,
-                sex = server.sex,
-                weightKg = server.weightKg,
-                heightCm = server.heightCm,
-                activityLevel = server.activityLevel,
-                suggestedKcalTarget = server.suggestedKcalTarget,
-            ),
-        )
+        foodLensApp.authState.setProfile(server.toProfile())
     }
 
     private fun refreshPermissions() {
         overlayGranted = Settings.canDrawOverlays(this)
         usageGranted = ForegroundAppPoller.hasPermission(this)
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        batteryUnrestricted = pm.isIgnoringBatteryOptimizations(packageName)
     }
 
     private fun requestOverlayPermission() {
@@ -329,6 +323,31 @@ class MainActivity : ComponentActivity() {
 
     private fun requestUsageAccess() {
         if (!usageGranted) startActivity(ForegroundAppPoller.settingsIntent())
+    }
+
+    /**
+     * Fires Android's "Allow app to run in background?" system dialog. Tapping
+     * Allow flips the app to battery-unrestricted, which is what most OEM
+     * skins (MIUI, ColorOS, OxygenOS, …) actually check before they let our
+     * foreground service survive a switch to Swiggy. Falls back to the App
+     * info screen on the rare ROM that doesn't expose the action.
+     */
+    @SuppressLint("BatteryLife")
+    private fun requestBatteryUnrestricted() {
+        val prompt = Intent(
+            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            Uri.parse("package:$packageName"),
+        )
+        try {
+            startActivity(prompt)
+        } catch (_: ActivityNotFoundException) {
+            startActivity(
+                Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:$packageName"),
+                ),
+            )
+        }
     }
 
     private fun nextStep(current: OnboardingStep): OnboardingStep = when (current) {
@@ -383,13 +402,13 @@ private fun OnboardingScreen(
                 OnboardingStep.PermissionOverlay -> PermissionBody(
                     title = "Display over other apps",
                     purpose = "We need this so the floating Cibo button can appear on top of your food delivery apps.",
-                    safety = "Even with this granted, our app only DRAWS the bubble inside food/grocery apps — never on Instagram, banking, your home screen, or anywhere else.",
+                    safety = "Even with this granted, our app only shows the floating button inside food/grocery apps — never on Instagram, banking, your home screen, or anywhere else.",
                     granted = overlayGranted,
                     onRecheck = onRecheck,
                 )
                 OnboardingStep.PermissionUsage -> PermissionBody(
                     title = "Usage access",
-                    purpose = "We use this to detect when you open a food app, so the bubble appears automatically — and stays hidden everywhere else.",
+                    purpose = "We use this to detect when you open a food app, so Cibo appears automatically — and stays hidden everywhere else.",
                     safety = "We never read what you do inside other apps. We only check whether the foreground app is in our food-app allowlist (Swiggy, Zomato, Domino's, …).",
                     granted = usageGranted,
                     onRecheck = onRecheck,
@@ -487,7 +506,7 @@ private fun HowItWorksBody() {
         )
         StepRow(
             2,
-            "Tap the floating Cibo bubble",
+            "Tap the floating Cibo button",
             "It appears automatically on your cart screen — and only there.",
         )
         StepRow(
@@ -558,7 +577,7 @@ private fun ReadyBody() {
             fontWeight = FontWeight.Bold,
         )
         Text(
-            "Open Swiggy, Zomato, or any food app. The Cibo bubble will appear on your cart — tap it for instant nutrition.",
+            "Open Swiggy, Zomato, or any food app. The Cibo button will appear on your cart — tap it for instant nutrition.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),

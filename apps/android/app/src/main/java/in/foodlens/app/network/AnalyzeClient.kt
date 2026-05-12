@@ -79,6 +79,19 @@ data class UserPublic(
     val suggestedKcalTarget: Int? = null,
 )
 
+fun UserPublic.toProfile(): `in`.foodlens.app.auth.UserProfile = `in`.foodlens.app.auth.UserProfile(
+    email = email,
+    name = name,
+    picture = picture,
+    dailyKcalTarget = dailyKcalTarget,
+    birthYear = birthYear,
+    sex = sex,
+    weightKg = weightKg,
+    heightCm = heightCm,
+    activityLevel = activityLevel,
+    suggestedKcalTarget = suggestedKcalTarget,
+)
+
 @Serializable
 data class AuthResponse(
     val token: String,

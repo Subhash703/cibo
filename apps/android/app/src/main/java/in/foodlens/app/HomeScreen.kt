@@ -2,6 +2,8 @@ package `in`.foodlens.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import `in`.foodlens.app.auth.UserProfile
+import java.time.LocalTime
 
 @Composable
 fun HomeScreen(
@@ -38,23 +42,33 @@ fun HomeScreen(
     onOpenProfile: () -> Unit,
     onRefreshBubble: () -> Unit,
     onStopBubble: () -> Unit,
+    onAllowUnrestrictedBattery: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+            .padding(horizontal = 24.dp, vertical = 24.dp),
     ) {
-        Text(
-            "Cibo",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-        )
+        // Scrollable top section. The bottom action buttons stay pinned —
+        // weight(1f) gives the scroll viewport whatever space the buttons
+        // don't claim, so on short screens the content scrolls instead of
+        // clipping the Refresh / Stop buttons.
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            HomeTopBar(user = user, onOpenProfile = onOpenProfile)
+            GreetingBlock(user = user)
+            StatusCard(isRunning = isRunning)
+            if (onAllowUnrestrictedBattery != null) {
+                BatteryTipCard(onAllow = onAllowUnrestrictedBattery)
+            }
+        }
 
-        StatusCard(isRunning = isRunning)
-        ProfileChip(user = user, onClick = onOpenProfile)
-
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(20.dp))
 
         // Primary: Refresh / Start. Always available.
         Button(
@@ -65,7 +79,7 @@ fun HomeScreen(
             shape = RoundedCornerShape(14.dp),
         ) {
             Text(
-                if (isRunning) "Refresh bubble" else "Start Cibo bubble",
+                if (isRunning) "Refresh Cibo" else "Start Cibo",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -73,6 +87,7 @@ fun HomeScreen(
 
         // Secondary: Stop. Only shown when actually running.
         if (isRunning) {
+            Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = onStopBubble,
                 modifier = Modifier
@@ -80,9 +95,77 @@ fun HomeScreen(
                     .height(46.dp),
                 shape = RoundedCornerShape(14.dp),
             ) {
-                Text("Stop Cibo bubble")
+                Text("Stop Cibo")
             }
         }
+    }
+}
+
+@Composable
+private fun HomeTopBar(user: UserProfile?, onOpenProfile: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "Cibo",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        ProfileAvatarButton(user = user, onClick = onOpenProfile)
+    }
+}
+
+@Composable
+private fun ProfileAvatarButton(user: UserProfile?, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(42.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        val ch = user?.name?.firstOrNull() ?: user?.email?.firstOrNull() ?: '+'
+        Text(
+            ch.uppercaseChar().toString(),
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+        )
+    }
+}
+
+@Composable
+private fun GreetingBlock(user: UserProfile?) {
+    val hour = LocalTime.now().hour
+    val timeGreeting = when {
+        hour < 12 -> "Good morning"
+        hour < 17 -> "Good afternoon"
+        else -> "Good evening"
+    }
+    val displayName = user?.name?.takeIf { it.isNotBlank() }?.trim()?.split(" ")?.firstOrNull()
+        ?: user?.email?.substringBefore("@")?.replaceFirstChar { it.uppercaseChar() }
+
+    val headline = if (displayName != null) "$timeGreeting, $displayName" else timeGreeting
+    val sub = if (user != null) {
+        "Goal: ${user.dailyKcalTarget} kcal today · tap your initial to edit"
+    } else {
+        "Sign in to track your daily calorie goal — tap the avatar above."
+    }
+    Column {
+        Text(
+            headline,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            sub,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+        )
     }
 }
 
@@ -111,11 +194,11 @@ private fun StatusCard(isRunning: Boolean) {
             Spacer(Modifier.height(6.dp))
             Text(
                 if (isRunning) {
-                    "The bubble appears when you open Swiggy / Zomato / Domino's etc., " +
-                        "and stays hidden everywhere else. If it doesn't show after the " +
-                        "phone has been idle, tap Refresh below."
+                    "Cibo appears automatically when you open Swiggy / Zomato / " +
+                        "Domino's etc., and stays hidden everywhere else. If it " +
+                        "doesn't appear after the phone has been idle, tap Refresh below."
                 } else {
-                    "Bubble service stopped. Tap Start to bring it back."
+                    "Cibo isn't running. Tap Start to bring it back."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
@@ -125,58 +208,28 @@ private fun StatusCard(isRunning: Boolean) {
 }
 
 @Composable
-private fun ProfileChip(user: UserProfile?, onClick: () -> Unit) {
+private fun BatteryTipCard(onAllow: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
+        ),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center,
-            ) {
-                val ch = user?.name?.firstOrNull() ?: user?.email?.firstOrNull() ?: '+'
-                Text(
-                    ch.uppercaseChar().toString(),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                if (user != null) {
-                    Text(
-                        user.name ?: user.email,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        "Goal: ${user.dailyKcalTarget} kcal/day · tap to edit",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    )
-                } else {
-                    Text(
-                        "Sign in for daily tracking",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        "Save your calorie goal and remaining intake — tap →",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    )
-                }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Cibo not showing on Swiggy / Zomato?",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Your phone's battery saver may be stopping Cibo in the background. Allow Cibo to run unrestricted, then reopen Swiggy.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            )
+            TextButton(onClick = onAllow) {
+                Text("Allow Cibo to run in background")
             }
         }
     }
