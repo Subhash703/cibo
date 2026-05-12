@@ -30,7 +30,7 @@ android {
         buildConfigField(
             "String",
             "BACKEND_BASE_URL",
-            "\"https://cibo-api.onrender.com\"",
+            "\"https://cibo-api-op1m.onrender.com\"",
         )
     }
 
