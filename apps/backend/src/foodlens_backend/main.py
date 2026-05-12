@@ -31,14 +31,17 @@ from .schemas import (
     AnalyzeResponse,
     AuthResponse,
     LoginRequest,
+    MatchedItem,
+    MealLogPublic,
     MealLogRequest,
+    PlateAnalyzeResponse,
     ProfileUpdate,
     RegisterRequest,
     TodaySummary,
     UserPublic,
 )
 from .tdee import VALID_ACTIVITY_LEVELS, VALID_SEXES, compute_tdee
-from .vision import analyze_with_vision
+from .vision import analyze_plate_with_vision, analyze_with_vision
 
 
 def _to_user_public(user: User) -> UserPublic:
@@ -151,6 +154,44 @@ async def analyze_vision(
     return AnalyzeResponse(**core.model_dump(), daily_summary=summary)
 
 
+@app.post("/analyze-plate", response_model=PlateAnalyzeResponse)
+async def analyze_plate(
+    image: UploadFile = File(...),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> PlateAnalyzeResponse:
+    """Single-plate photo analyzer for the Plate tab.
+
+    Always authenticated — the verdict is personalised against the user's
+    daily target and what they've already logged today. Use /analyze-vision
+    instead for unauthenticated cart screenshots.
+    """
+    data = await image.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty image upload.")
+    if len(data) > _MAX_IMAGE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Image too large ({len(data)} bytes). Max {_MAX_IMAGE_BYTES}.",
+        )
+    summary = _today_summary(db, user)
+    mime = image.content_type or "image/jpeg"
+    try:
+        core = await analyze_plate_with_vision(data, daily_summary=summary, mime_type=mime)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    except genai_errors.APIError as e:
+        upstream = getattr(e, "code", 500)
+        if upstream in (429, 503):
+            raise HTTPException(
+                status_code=503,
+                detail="The AI service is briefly busy. Please try again in a few seconds.",
+            ) from e
+        raise HTTPException(status_code=502, detail=f"AI service error ({upstream}).") from e
+
+    return PlateAnalyzeResponse(**core.model_dump(), daily_summary=summary)
+
+
 # --- Auth + profile ---------------------------------------------------------
 
 
@@ -239,6 +280,36 @@ def me_today(
     db: Session = Depends(get_db),
 ) -> TodaySummary:
     return _today_summary(db, user)
+
+
+def _meal_log_to_public(log: MealLog) -> MealLogPublic:
+    raw_items = json_lib.loads(log.items_json) if log.items_json else []
+    items = [MatchedItem.model_validate(item) for item in raw_items]
+    return MealLogPublic(
+        id=log.id,
+        logged_at=log.logged_at.isoformat(),
+        kcal=log.kcal,
+        protein_g=log.protein_g,
+        fat_g=log.fat_g,
+        carbs_g=log.carbs_g,
+        health_score=log.health_score,
+        items=items,
+    )
+
+
+@app.get("/me/meal-logs/today", response_model=list[MealLogPublic])
+def me_meal_logs_today(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> list[MealLogPublic]:
+    """Today's logged meals for the current user, most recent first."""
+    logs = (
+        db.query(MealLog)
+        .filter(MealLog.user_id == user.id, MealLog.log_date == date.today())
+        .order_by(MealLog.logged_at.desc())
+        .all()
+    )
+    return [_meal_log_to_public(log) for log in logs]
 
 
 @app.post("/meal-logs", response_model=TodaySummary)

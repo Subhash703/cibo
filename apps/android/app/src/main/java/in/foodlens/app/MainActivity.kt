@@ -20,15 +20,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,7 +74,9 @@ private enum class OnboardingStep {
     Ready,
 }
 
-private enum class AppScreen { ONBOARDING, HOME, PROFILE }
+private enum class AppScreen { ONBOARDING, MAIN, PROFILE }
+
+private enum class MainTab { HOME, PLATE }
 
 class MainActivity : ComponentActivity() {
 
@@ -70,6 +84,7 @@ class MainActivity : ComponentActivity() {
     private var usageGranted by mutableStateOf(false)
     private var step by mutableStateOf(OnboardingStep.Welcome)
     private var screen by mutableStateOf(AppScreen.ONBOARDING)
+    private var tab by mutableStateOf(MainTab.HOME)
 
     // Profile screen UI state
     private var profileBusy by mutableStateOf(false)
@@ -80,7 +95,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         refreshPermissions()
-        screen = if (overlayGranted && usageGranted) AppScreen.HOME else AppScreen.ONBOARDING
+        screen = if (overlayGranted && usageGranted) AppScreen.MAIN else AppScreen.ONBOARDING
         if (overlayGranted && usageGranted) step = OnboardingStep.Ready
 
         setContent {
@@ -104,7 +119,7 @@ class MainActivity : ComponentActivity() {
                             onStart = {
                                 if (overlayGranted && usageGranted) {
                                     FloatingButtonService.start(this@MainActivity)
-                                    screen = AppScreen.HOME
+                                    screen = AppScreen.MAIN
                                 } else {
                                     if (!overlayGranted) requestOverlayPermission()
                                     else if (!usageGranted) requestUsageAccess()
@@ -112,23 +127,89 @@ class MainActivity : ComponentActivity() {
                             },
                         )
 
-                        AppScreen.HOME -> {
+                        AppScreen.MAIN -> {
                             val running by foodLensApp.floatingButtonRunning.collectAsState()
-                            HomeScreen(
-                                user = user,
-                                isRunning = running,
-                                onOpenProfile = { screen = AppScreen.PROFILE },
-                                onRefreshBubble = {
-                                    if (running) {
-                                        FloatingButtonService.refresh(this@MainActivity)
-                                    } else {
-                                        FloatingButtonService.start(this@MainActivity)
+                            Scaffold(
+                                bottomBar = {
+                                    NavigationBar(
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                    ) {
+                                        NavigationBarItem(
+                                            selected = tab == MainTab.HOME,
+                                            onClick = { tab = MainTab.HOME },
+                                            icon = {
+                                                Icon(
+                                                    if (tab == MainTab.HOME) {
+                                                        Icons.Filled.Home
+                                                    } else {
+                                                        Icons.Outlined.Home
+                                                    },
+                                                    contentDescription = "Home",
+                                                )
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                ),
+                                            ),
+                                        )
+                                        NavigationBarItem(
+                                            selected = tab == MainTab.PLATE,
+                                            onClick = { tab = MainTab.PLATE },
+                                            icon = {
+                                                Icon(
+                                                    if (tab == MainTab.PLATE) {
+                                                        Icons.Filled.Restaurant
+                                                    } else {
+                                                        Icons.Outlined.Restaurant
+                                                    },
+                                                    contentDescription = "Plate",
+                                                )
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                ),
+                                            ),
+                                        )
                                     }
                                 },
-                                onStopBubble = {
-                                    FloatingButtonService.stop(this@MainActivity)
-                                },
-                            )
+                            ) { padding ->
+                                AnimatedContent(
+                                    targetState = tab,
+                                    transitionSpec = {
+                                        (fadeIn(animationSpec = androidx.compose.animation.core.tween(220))
+                                            togetherWith
+                                            fadeOut(animationSpec = androidx.compose.animation.core.tween(180)))
+                                    },
+                                    label = "tab-switch",
+                                    modifier = Modifier.padding(padding),
+                                ) { selected ->
+                                    when (selected) {
+                                        MainTab.HOME -> HomeScreen(
+                                            user = user,
+                                            isRunning = running,
+                                            onOpenProfile = { screen = AppScreen.PROFILE },
+                                            onRefreshBubble = {
+                                                if (running) {
+                                                    FloatingButtonService.refresh(this@MainActivity)
+                                                } else {
+                                                    FloatingButtonService.start(this@MainActivity)
+                                                }
+                                            },
+                                            onStopBubble = {
+                                                FloatingButtonService.stop(this@MainActivity)
+                                            },
+                                        )
+                                        MainTab.PLATE -> PlateScreen(
+                                            user = user,
+                                            analyzer = foodLensApp.analyzer,
+                                            idToken = foodLensApp.authState.idToken,
+                                            onSignInRequested = { screen = AppScreen.PROFILE },
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         AppScreen.PROFILE -> ProfileScreen(
@@ -160,7 +241,7 @@ class MainActivity : ComponentActivity() {
                                     profileBusy = false
                                 }
                             },
-                            onBack = { screen = AppScreen.HOME },
+                            onBack = { screen = AppScreen.MAIN },
                         )
                     }
                 }

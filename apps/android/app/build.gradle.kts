@@ -19,15 +19,18 @@ android {
         // Dev backend URL. Current value is an ngrok tunnel — works through
         // corporate Wi-Fi AP isolation, cellular, and any firewall. Regenerate
         // when the ngrok session restarts (free tier rotates the subdomain).
-        // Other options for development:
-        //   • USB: `adb reverse tcp:8000 tcp:8000` → "http://localhost:8000"
+        // Production backend on Render (free tier; 90-day Postgres clock —
+        // calendar a reminder to migrate or upgrade by day 75).
+        //
+        // For local backend dev, swap to one of:
+        //   • USB:                 "http://localhost:8000"  + `adb reverse tcp:8000 tcp:8000`
         //   • Same-LAN no isolation: "http://<mac-lan-ip>:8000"
-        //   • Emulator host loopback: "http://10.0.2.2:8000"
-        // For prod, replace with the deployed HTTPS API.
+        //   • Emulator:            "http://10.0.2.2:8000"
+        //   • ngrok of local:      "https://xxxx.ngrok-free.app"
         buildConfigField(
             "String",
             "BACKEND_BASE_URL",
-            "\"https://de69-103-159-11-202.ngrok-free.app\"",
+            "\"https://cibo-api.onrender.com\"",
         )
     }
 
@@ -62,6 +65,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation(libs.okhttp)

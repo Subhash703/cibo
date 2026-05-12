@@ -76,8 +76,8 @@ class OverlayBubbleManager(private val appContext: Context) {
             loadingTipTv?.text = "💡 ${LOADING_TIPS[loadingTipIdx]}"
             val elapsed = System.currentTimeMillis() - loadingTickStart
             loadingPhaseTv?.text = when {
-                elapsed < 1500 -> "Reading your cart…"
-                elapsed < 4500 -> "Asking AI…"
+                elapsed < 1500 -> "Looking at your cart…"
+                elapsed < 4500 -> "Doing the maths…"
                 else -> "Almost there…"
             }
             main.postDelayed(this, LOADING_TIP_INTERVAL_MS)
@@ -324,9 +324,20 @@ class OverlayBubbleManager(private val appContext: Context) {
         val card = card()
         card.addView(header(title = "Cibo"))
 
-        val phase = textView("Reading your cart…", titleSize = 16f, bold = true)
+        val phase = textView("Looking at your cart…", titleSize = 16f, bold = true)
         loadingPhaseTv = phase
         card.addView(phase)
+
+        // Static evocative subtitle — mirrors the Plate tab's
+        // "Reading colours, textures, portions" rhythm. Gives the user
+        // something to read during the 2-3s Gemini round-trip.
+        card.addView(
+            textView(
+                "Reading items, portions, totals.",
+                titleSize = 13f,
+                subdued = true,
+            ),
+        )
 
         card.addView(spinnerDots())
 

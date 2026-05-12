@@ -52,9 +52,42 @@ class AnalysisCore(BaseModel):
     unmatched: list[str] = Field(default_factory=list)
 
 
+class CoachVerdict(BaseModel):
+    """Single-plate verdict for the photo-of-my-meal flow. Only populated by
+    /analyze-plate, never by /analyze-vision (which is cart-mode)."""
+
+    signal: str = Field(..., description="green / yellow / red")
+    one_liner: str = Field(..., description="Single-sentence verdict shown on the result card.")
+    reason: str = Field(default="", description="Optional longer explanation; shown when user expands.")
+
+
+class PlateAnalysisCore(BaseModel):
+    """Single-plate version of AnalysisCore. Different prompt shape:
+    we want the dish name and a friendly description (not cart-style line
+    items), plus the coach verdict that compares against the user's day."""
+
+    dish_name: str
+    dish_description: str
+    macros: Macro
+    health_score: int = Field(..., ge=0, le=100)
+    health_label: str
+    verdict: CoachVerdict
+
+
 class AnalyzeResponse(AnalysisCore):
-    """Public analyze response. Identical to [AnalysisCore] plus an optional
-    [daily_summary] populated when the request was authenticated."""
+    """Public response for the cart-flow analyzer.
+
+    Identical to [AnalysisCore] plus an optional [daily_summary] populated
+    when the request was authenticated."""
+
+    daily_summary: TodaySummary | None = None
+
+
+class PlateAnalyzeResponse(PlateAnalysisCore):
+    """Public response for the plate-flow analyzer.
+
+    Includes the user's daily summary so the result card can render both
+    'this dish' and 'your day' side-by-side."""
 
     daily_summary: TodaySummary | None = None
 
@@ -121,3 +154,16 @@ class MealLogRequest(BaseModel):
     macros: Macro
     items: list[MatchedItem] = Field(default_factory=list)
     health_score: int = Field(..., ge=0, le=100)
+
+
+class MealLogPublic(BaseModel):
+    """A single logged meal, returned by GET /me/meal-logs/today."""
+
+    id: int
+    logged_at: str = Field(..., description="ISO 8601 timestamp in UTC.")
+    kcal: int
+    protein_g: int
+    fat_g: int
+    carbs_g: int
+    health_score: int
+    items: list[MatchedItem] = Field(default_factory=list)

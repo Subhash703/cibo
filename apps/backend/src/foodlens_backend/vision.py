@@ -15,7 +15,7 @@ from functools import lru_cache
 from google import genai
 from google.genai import types
 
-from .schemas import AnalysisCore
+from .schemas import AnalysisCore, PlateAnalysisCore, TodaySummary
 
 _MODEL = "gemini-2.5-flash"
 
@@ -99,7 +99,95 @@ async def analyze_with_vision(image_bytes: bytes, mime_type: str = "image/jpeg")
     parsed = response.parsed
     if isinstance(parsed, AnalysisCore):
         return parsed
-    # Fallback: SDK occasionally returns a dict instead of the parsed model.
     if isinstance(parsed, dict):
         return AnalysisCore.model_validate(parsed)
+    raise RuntimeError(f"Unexpected Gemini response type: {type(parsed).__name__}")
+
+
+_PLATE_PROMPT_TEMPLATE = """\
+You are a friendly nutrition coach for someone who's tracking their daily
+intake. Look at this photo: it shows a SINGLE plate / bowl / cup of food the
+user is about to eat (NOT a delivery app screenshot — that's a different flow).
+
+Step 1 — identify the dish:
+- `dish_name`: the most recognisable name for what's on the plate, in
+  the user's region (assume India unless the food strongly suggests
+  otherwise). Combine sub-components into one name when they're served
+  together (e.g. "Savoury Pancake with Chutney and Curry", not
+  three separate items).
+- `dish_description`: one warm, descriptive sentence — flavours, textures,
+  cuisine context. Think menu copy, not clinical.
+
+Step 2 — estimate nutrition for ONE realistic serving as shown:
+- `macros.kcal`, `protein_g`, `fat_g`, `carbs_g` based on typical Indian
+  restaurant / home portions.
+
+Step 3 — score the meal in isolation:
+- `health_score` 0-100, `health_label` one of
+  "Excellent" | "Good" | "Heavy meal" | "Very heavy"
+
+Step 4 — coach verdict GIVEN the user's day so far:
+{daily_context}
+
+Set `verdict.signal` to:
+- "green"  if eating this leaves them comfortably under their daily goal
+- "yellow" if it takes most of the remaining budget but doesn't exceed it
+- "red"    if it would push them over goal, or they're already close to it
+
+Set `verdict.one_liner` to a single sentence in second person, warm but
+honest. Examples (DO NOT REUSE VERBATIM):
+- green:  "Fits comfortably — you'll still have room for dinner."
+- yellow: "Works, but this uses up most of today's budget."
+- red:    "This would push you over today's goal — consider a smaller portion."
+
+Set `verdict.reason` to a 1-2 sentence explanation with the actual numbers.
+
+If the image is NOT a single plate of food (delivery app screenshot,
+landscape, person, etc.): set `dish_name`="Not food", `dish_description`=
+empty, all macros 0, health_score=50, health_label="No food detected",
+verdict.signal="yellow", verdict.one_liner="Couldn't see a plate of food in
+this image — try again with the meal centred."
+"""
+
+
+def _format_daily_context(summary: TodaySummary | None) -> str:
+    if summary is None:
+        return (
+            "The user is NOT signed in — you don't have their daily goal or what "
+            "they've eaten so far. Skip personalisation; for `verdict.signal` "
+            "use 'green' unless this single meal is clearly very heavy (>900 "
+            "kcal, very fat-heavy). `verdict.one_liner` should describe the "
+            "meal itself, not their day."
+        )
+    return (
+        f"- Daily kcal goal: {summary.daily_kcal_target}\n"
+        f"- Consumed today: {summary.consumed_kcal} kcal\n"
+        f"- Remaining today: {summary.remaining_kcal} kcal\n"
+        f"- Today's logged meals: {summary.log_count}"
+    )
+
+
+async def analyze_plate_with_vision(
+    image_bytes: bytes,
+    daily_summary: TodaySummary | None,
+    mime_type: str = "image/jpeg",
+) -> PlateAnalysisCore:
+    """Single-plate analyzer. Different prompt + schema from /analyze-vision."""
+    prompt = _PLATE_PROMPT_TEMPLATE.format(daily_context=_format_daily_context(daily_summary))
+    image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+    response = await _client().aio.models.generate_content(
+        model=_MODEL,
+        contents=[prompt, image_part],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=PlateAnalysisCore,
+            temperature=0.2,  # slight room for warmer verdict copy
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
+        ),
+    )
+    parsed = response.parsed
+    if isinstance(parsed, PlateAnalysisCore):
+        return parsed
+    if isinstance(parsed, dict):
+        return PlateAnalysisCore.model_validate(parsed)
     raise RuntimeError(f"Unexpected Gemini response type: {type(parsed).__name__}")

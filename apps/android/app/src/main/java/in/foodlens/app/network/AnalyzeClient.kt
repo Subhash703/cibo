@@ -102,6 +102,36 @@ data class MealLogRequest(
     val healthScore: Int,
 )
 
+@Serializable
+data class CoachVerdict(
+    val signal: String,        // "green" | "yellow" | "red"
+    val oneLiner: String,
+    val reason: String = "",
+)
+
+@Serializable
+data class PlateAnalyzeResponse(
+    val dishName: String,
+    val dishDescription: String,
+    val macros: Macro,
+    val healthScore: Int,
+    val healthLabel: String,
+    val verdict: CoachVerdict,
+    val dailySummary: DailySummary? = null,
+)
+
+@Serializable
+data class MealLogPublic(
+    val id: Int,
+    val loggedAt: String,   // ISO 8601 (UTC, naive — parse as LocalDateTime, treat as UTC)
+    val kcal: Int,
+    val proteinG: Int,
+    val fatG: Int,
+    val carbsG: Int,
+    val healthScore: Int,
+    val items: List<MatchedItem> = emptyList(),
+)
+
 class AnalyzeClient(private val baseUrl: String) {
 
     private val http = OkHttpClient.Builder()
@@ -201,6 +231,16 @@ class AnalyzeClient(private val baseUrl: String) {
         execute(request, DailySummary.serializer())
     }
 
+    suspend fun getTodayMealLogs(idToken: String): List<MealLogPublic> =
+        withContext(Dispatchers.IO) {
+            val request = Request.Builder()
+                .url("$baseUrl/me/meal-logs/today")
+                .header("Authorization", "Bearer $idToken")
+                .get()
+                .build()
+            execute(request, kotlinx.serialization.builtins.ListSerializer(MealLogPublic.serializer()))
+        }
+
     suspend fun logMeal(idToken: String, request: MealLogRequest): DailySummary =
         withContext(Dispatchers.IO) {
             val body = json.encodeToString(request).toRequestBody(JSON_MEDIA)
@@ -211,6 +251,26 @@ class AnalyzeClient(private val baseUrl: String) {
                 .build()
             execute(httpRequest, DailySummary.serializer())
         }
+
+    /**
+     * Plate-tab analyzer. Auth is required server-side because the verdict
+     * is personalised against the user's daily target.
+     */
+    suspend fun analyzePlate(
+        idToken: String,
+        jpegBytes: ByteArray,
+    ): PlateAnalyzeResponse = withContext(Dispatchers.IO) {
+        val body = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("image", "plate.jpg", jpegBytes.toRequestBody(JPEG_MEDIA))
+            .build()
+        val request = Request.Builder()
+            .url("$baseUrl/analyze-plate")
+            .header("Authorization", "Bearer $idToken")
+            .post(body)
+            .build()
+        execute(request, PlateAnalyzeResponse.serializer())
+    }
 
     private fun <T> execute(
         request: Request,

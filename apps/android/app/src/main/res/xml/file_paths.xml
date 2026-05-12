@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Camera captures land here; FileProvider shares them with the
+         system camera app so it can write the JPEG. App's private cache,
+         not visible in Gallery. -->
+    <cache-path
+        name="captured_photos"
+        path="captures/" />
+</paths>

@@ -134,3 +134,70 @@ def test_users_log_lists_are_isolated() -> None:
         headers={"Authorization": f"Bearer {token_b}"},
     ).json()
     assert body_b["consumed_kcal"] == 0
+
+
+def test_meal_logs_today_returns_empty_initially() -> None:
+    token = _register()
+    response = client.get(
+        "/me/meal-logs/today",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_meal_logs_today_returns_logged_meals_most_recent_first() -> None:
+    token = _register()
+    headers = {"Authorization": f"Bearer {token}"}
+    client.post(
+        "/meal-logs",
+        headers=headers,
+        json={
+            "macros": {"kcal": 300, "protein_g": 10, "fat_g": 5, "carbs_g": 50},
+            "items": [{"name": "Berry Oats", "qty": 1, "kcal": 300}],
+            "health_score": 80,
+        },
+    )
+    client.post(
+        "/meal-logs",
+        headers=headers,
+        json={
+            "macros": {"kcal": 920, "protein_g": 22, "fat_g": 28, "carbs_g": 110},
+            "items": [{"name": "Burger Pizza", "qty": 1, "kcal": 880}],
+            "health_score": 55,
+        },
+    )
+    response = client.get("/me/meal-logs/today", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 2
+    # Most recent first — Burger Pizza was logged after Berry Oats
+    assert body[0]["items"][0]["name"] == "Burger Pizza"
+    assert body[1]["items"][0]["name"] == "Berry Oats"
+    # logged_at is an ISO string
+    assert "T" in body[0]["logged_at"]
+
+
+def test_meal_logs_today_requires_auth() -> None:
+    response = client.get("/me/meal-logs/today")
+    assert response.status_code == 401
+
+
+def test_meal_logs_today_isolated_per_user() -> None:
+    token_a = _register("c@example.com")
+    token_b = _register("d@example.com")
+    client.post(
+        "/meal-logs",
+        headers={"Authorization": f"Bearer {token_a}"},
+        json={
+            "macros": {"kcal": 200, "protein_g": 8, "fat_g": 5, "carbs_g": 30},
+            "items": [{"name": "Apple", "qty": 1, "kcal": 95}],
+            "health_score": 85,
+        },
+    )
+    response = client.get(
+        "/me/meal-logs/today",
+        headers={"Authorization": f"Bearer {token_b}"},
+    )
+    assert response.status_code == 200
+    assert response.json() == []
