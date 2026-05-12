@@ -1,4 +1,5 @@
 import json as json_lib
+import logging
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
@@ -8,6 +9,9 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from fastapi.middleware.cors import CORSMiddleware
 from google.genai import errors as genai_errors
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger("foodlens.backend")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 # Load apps/backend/.env into the process environment before any module reads
 # os.environ. Lets the dev workflow be `uvicorn foodlens_backend.main:app …`
@@ -78,6 +82,37 @@ app.add_middleware(
 _MAX_IMAGE_BYTES = 4 * 1024 * 1024  # 4 MB
 
 
+def _gemini_error_to_http(e: genai_errors.APIError, route: str) -> HTTPException:
+    """Convert a Gemini upstream error into a FastAPI HTTPException, AND log
+    the full upstream message+code so we can actually diagnose 4xx/5xx in
+    Render's logs (instead of staring at opaque 'AI service error (400)')."""
+    upstream = getattr(e, "code", 500)
+    upstream_message = getattr(e, "message", None) or str(e)
+    logger.error(
+        "Gemini upstream error on %s — code=%s message=%s",
+        route,
+        upstream,
+        upstream_message,
+        exc_info=True,
+    )
+    if upstream in (429, 503):
+        return HTTPException(
+            status_code=503,
+            detail="The AI service is briefly busy. Please try again in a few seconds.",
+        )
+    if upstream == 400:
+        # Almost always the image itself — too small, corrupt, blocked by
+        # safety filter, or wrong format. Give a hint the user can act on.
+        return HTTPException(
+            status_code=400,
+            detail=(
+                "Couldn't read this image. Try a clearer, larger photo of "
+                "a single dish — straight-on, well-lit."
+            ),
+        )
+    return HTTPException(status_code=502, detail=f"AI service error ({upstream}).")
+
+
 def _today_summary(db: Session, user: User) -> TodaySummary:
     """Compute the user's daily totals from today's MealLog rows."""
     logs = (
@@ -134,20 +169,7 @@ async def analyze_vision(
         # Configuration / parse failures (missing API key, malformed model output).
         raise HTTPException(status_code=500, detail=str(e)) from e
     except genai_errors.APIError as e:
-        # Map Gemini's transient overload signals to a clean 503 so the
-        # Android bubble can show a "try again in a moment" message instead
-        # of the raw upstream traceback. 429 (rate limit) and 503 (model
-        # overloaded) are both expected during peak hours on free tier.
-        upstream = getattr(e, "code", 500)
-        if upstream in (429, 503):
-            raise HTTPException(
-                status_code=503,
-                detail="The AI service is briefly busy. Please try again in a few seconds.",
-            ) from e
-        raise HTTPException(
-            status_code=502,
-            detail=f"AI service error ({upstream}).",
-        ) from e
+        raise _gemini_error_to_http(e, route="/analyze-vision") from e
 
     user = optional_current_user(authorization=authorization, db=db)
     summary = _today_summary(db, user) if user else None
@@ -176,18 +198,16 @@ async def analyze_plate(
         )
     summary = _today_summary(db, user)
     mime = image.content_type or "image/jpeg"
+    logger.info(
+        "/analyze-plate user_id=%s image_bytes=%d mime=%s",
+        user.id, len(data), mime,
+    )
     try:
         core = await analyze_plate_with_vision(data, daily_summary=summary, mime_type=mime)
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
     except genai_errors.APIError as e:
-        upstream = getattr(e, "code", 500)
-        if upstream in (429, 503):
-            raise HTTPException(
-                status_code=503,
-                detail="The AI service is briefly busy. Please try again in a few seconds.",
-            ) from e
-        raise HTTPException(status_code=502, detail=f"AI service error ({upstream}).") from e
+        raise _gemini_error_to_http(e, route="/analyze-plate") from e
 
     return PlateAnalyzeResponse(**core.model_dump(), daily_summary=summary)
 
