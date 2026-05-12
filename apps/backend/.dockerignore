@@ -1,0 +1,33 @@
+# Local-only — never ship these into the image
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+
+# Secrets (Render injects via env vars instead)
+.env
+.env.*
+!.env.example
+
+# Local SQLite leftovers (project is Postgres-only in prod)
+cibo*.db
+cibo*.db-*
+
+# Tests aren't needed at runtime
+tests/
+
+# Git / CI noise
+.git/
+.gitignore
+.github/
+
+# Editor cruft
+.idea/
+.vscode/
+*.iml
+.DS_Store
