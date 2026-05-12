@@ -9,7 +9,11 @@
 databases:
   - name: cibo-db
     plan: free
-    region: singapore         # closest IN-friendly free region
+    # NOTE: was `singapore` but Render's Singapore IPs trigger Gemini's
+    # "User location is not supported" geo check. Oregon works reliably.
+    # Render free Postgres requires the web service in the same region,
+    # so the service below also lives in oregon.
+    region: oregon
     postgresMajorVersion: "16"
     # No `ipAllowList` block ⇒ defaults to allowing all Render services in
     # the same region to connect (which is what we want).
@@ -19,7 +23,7 @@ services:
     name: cibo-api
     runtime: docker
     plan: free
-    region: singapore
+    region: oregon
     dockerfilePath: ./apps/backend/Dockerfile
     dockerContext: ./apps/backend
     healthCheckPath: /healthz
