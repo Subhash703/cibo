@@ -1,0 +1,51 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Claude Code per-machine config (permissions, etc.)
+.claude/settings.local.json
+
+# Secrets / env
+.env
+.env.local
+.env.*.local
+local.properties
+**/google-services.json
+**/service-account*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+
+# Local SQLite leftovers (project is Postgres-only; these are stale)
+cibo*.db
+cibo*.db-journal
+cibo*.db-wal
+cibo*.db-shm
+
+# Android / Gradle
+.gradle/
+build/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+.cxx/
+
+# Generated
+generated/

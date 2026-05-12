@@ -1,0 +1,123 @@
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class AnalyzeRequest(BaseModel):
+    items: list[str] = Field(..., description="Food item names extracted by on-device OCR.")
+    region_hint: str | None = Field(default=None, description="ISO region, e.g. 'IN'.")
+
+
+class Macro(BaseModel):
+    kcal: int
+    protein_g: int
+    fat_g: int
+    carbs_g: int
+
+
+class Suggestion(BaseModel):
+    text: str
+    kcal_delta: int
+
+
+class MatchedItem(BaseModel):
+    """A single recognized food item with its computed contribution."""
+
+    name: str = Field(..., description="Canonical display name (title case).")
+    qty: int = Field(default=1, ge=1)
+    kcal: int = Field(..., ge=0)
+
+
+class TodaySummary(BaseModel):
+    """How much the user has consumed today and how much is left."""
+
+    daily_kcal_target: int
+    consumed_kcal: int
+    remaining_kcal: int
+    consumed_protein_g: int = 0
+    consumed_fat_g: int = 0
+    consumed_carbs_g: int = 0
+    log_count: int = 0
+
+
+class AnalysisCore(BaseModel):
+    """The per-cart analysis that the vision LLM produces. NO user-context
+    fields here — Gemini fills only this. Daily-summary is layered on by
+    the route after the LLM returns."""
+
+    health_score: int = Field(..., ge=0, le=100)
+    health_label: str
+    macros: Macro
+    percent_daily_kcal: int
+    suggestions: list[Suggestion]
+    items: list[MatchedItem] = Field(default_factory=list)
+    unmatched: list[str] = Field(default_factory=list)
+
+
+class AnalyzeResponse(AnalysisCore):
+    """Public analyze response. Identical to [AnalysisCore] plus an optional
+    [daily_summary] populated when the request was authenticated."""
+
+    daily_summary: TodaySummary | None = None
+
+
+# --- Auth + profile ---------------------------------------------------------
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=255)
+    password: str = Field(..., min_length=8, max_length=128)
+    name: str | None = Field(default=None, max_length=100)
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=255)
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+class UserPublic(BaseModel):
+    """User-facing profile shape returned to the Android client."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    email: str
+    name: str | None = None
+    picture: str | None = None
+    daily_kcal_target: int = 2000
+
+    # Optional body stats. The client renders an opt-in "Personalise my
+    # goal" section — none of these are required for the app to work.
+    birth_year: int | None = None
+    sex: str | None = None  # "male" / "female" / "other"
+    weight_kg: float | None = None
+    height_cm: float | None = None
+    activity_level: str | None = None  # one of tdee.VALID_ACTIVITY_LEVELS
+
+    # Computed (Mifflin-St Jeor TDEE). Non-None only when all required body
+    # stats are filled in. Suggestion only — user controls the actual goal
+    # via [daily_kcal_target].
+    suggested_kcal_target: int | None = None
+
+
+class AuthResponse(BaseModel):
+    """Response to /auth/register and /auth/login.
+
+    The Android client stores [token] and sends it on every authenticated
+    request as `Authorization: Bearer <token>`. Tokens expire after 30 days;
+    the client gracefully falls back to the sign-in screen on 401."""
+
+    token: str
+    user: UserPublic
+
+
+class ProfileUpdate(BaseModel):
+    daily_kcal_target: int | None = Field(default=None, ge=1000, le=5000)
+    birth_year: int | None = Field(default=None, ge=1900, le=2030)
+    sex: str | None = None
+    weight_kg: float | None = Field(default=None, ge=20, le=300)
+    height_cm: float | None = Field(default=None, ge=80, le=250)
+    activity_level: str | None = None
+
+
+class MealLogRequest(BaseModel):
+    macros: Macro
+    items: list[MatchedItem] = Field(default_factory=list)
+    health_score: int = Field(..., ge=0, le=100)

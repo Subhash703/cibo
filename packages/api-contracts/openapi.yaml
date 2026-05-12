@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Food Lens API
+  version: 0.2.0
+  description: Contract between the Android app and the backend analyzer.
+
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+
+  /analyze:
+    post:
+      summary: Analyze a list of food items extracted from a captured screen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
+
+components:
+  schemas:
+    AnalyzeRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { type: string }
+          description: Food item names extracted by on-device OCR.
+        region_hint:
+          type: string
+          description: ISO region, e.g. "IN".
+
+    Macro:
+      type: object
+      required: [kcal, protein_g, fat_g, carbs_g]
+      properties:
+        kcal: { type: integer }
+        protein_g: { type: integer }
+        fat_g: { type: integer }
+        carbs_g: { type: integer }
+
+    Suggestion:
+      type: object
+      required: [text, kcal_delta]
+      properties:
+        text: { type: string }
+        kcal_delta: { type: integer }
+
+    MatchedItem:
+      type: object
+      required: [name, qty, kcal]
+      properties:
+        name: { type: string, description: "Canonical display name (title case)." }
+        qty: { type: integer, minimum: 1 }
+        kcal: { type: integer, minimum: 0 }
+
+    AnalyzeResponse:
+      type: object
+      required: [health_score, health_label, macros, percent_daily_kcal, suggestions, items, unmatched]
+      properties:
+        health_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        health_label: { type: string }
+        macros:
+          $ref: "#/components/schemas/Macro"
+        percent_daily_kcal: { type: integer }
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Suggestion"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchedItem"
+        unmatched:
+          type: array
+          description: Original OCR strings that didn't resolve to a known food item.
+          items: { type: string }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_teal">#FF1ED4B6</color>
+    <color name="brand_navy">#FF0F1722</color>
+    <color name="bubble_bg">#FF15202B</color>
+    <color name="bubble_text">#FFE7EEF6</color>
+    <color name="bubble_dim">#FF92A0B0</color>
+    <color name="score_good">#FF34D399</color>
+    <color name="score_warn">#FFFBBF24</color>
+    <color name="score_bad">#FFEF4444</color>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cibo</string>
+    <string name="onboarding_headline">See what your meal will do — before you order.</string>
+    <string name="onboarding_grant_overlay">Allow floating button</string>
+    <string name="onboarding_grant_capture">Capture is one-tap. Nothing is stored.</string>
+    <string name="bubble_capturing">Reading your cart…</string>
+    <string name="fgs_overlay_channel">Floating button</string>
+    <string name="fgs_capture_channel">Screen analysis</string>
+</resources>
