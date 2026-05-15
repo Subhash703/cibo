@@ -125,7 +125,7 @@ struct DashboardScreen: View {
                 .font(CiboFont.h1)
                 .foregroundStyle(CiboColor.onSurface)
             Spacer()
-            Button("View Log") { }
+            Button("View all") { }
                 .font(CiboFont.body(14, weight: .semibold))
                 .foregroundStyle(CiboColor.primary)
         }
@@ -276,7 +276,7 @@ struct LogsScreen: View {
             CiboColor.background.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: CiboSpacing.md) {
-                    Text("Today's log")
+                    Text("Diary")
                         .font(CiboFont.display(32, weight: .semibold))
                         .foregroundStyle(CiboColor.onSurface)
                     if auth.todayLogs.isEmpty {
@@ -308,7 +308,7 @@ struct LogsScreen: View {
                 .padding(.top, CiboSpacing.md)
             }
         }
-        .navigationTitle("Logs")
+        .navigationTitle("Diary")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

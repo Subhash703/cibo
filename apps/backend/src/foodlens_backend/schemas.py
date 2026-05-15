@@ -139,6 +139,11 @@ class UserPublic(BaseModel):
     # GET /avatars/{user_id} when this is set; otherwise show initials.
     has_avatar: bool = False
 
+    # Free-tier scan budget. Clients show "X of {scans_limit} free scans
+    # used" and react to 402 from the analyze routes when the cap is hit.
+    scans_used: int = 0
+    scans_limit: int = 16
+
 
 class AuthResponse(BaseModel):
     """Response to /auth/register and /auth/login.
@@ -178,3 +183,23 @@ class MealLogPublic(BaseModel):
     carbs_g: int
     health_score: int
     items: list[MatchedItem] = Field(default_factory=list)
+
+
+class DailySummaryPoint(BaseModel):
+    """One day's totals — used by the History screen to draw trends."""
+
+    date: str = Field(..., description="ISO date YYYY-MM-DD (the user's UTC day).")
+    kcal: int = 0
+    protein_g: int = 0
+    fat_g: int = 0
+    carbs_g: int = 0
+    log_count: int = 0
+
+
+class HistoryResponse(BaseModel):
+    """Response shape for GET /me/daily-summaries."""
+
+    daily_kcal_target: int
+    days: list[DailySummaryPoint]
+    streak_days: int = Field(default=0, description="Consecutive days the user logged at least one meal, ending today.")
+    goal_hits: int = Field(default=0, description="Days within the window where kcal landed at or below the goal.")

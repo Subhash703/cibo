@@ -40,7 +40,7 @@ targets:
         UIRequiresFullScreen: false
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: in.foodlens.cibo
+        PRODUCT_BUNDLE_IDENTIFIER: com.foodlens.cibo
         TARGETED_DEVICE_FAMILY: "1"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         ENABLE_PREVIEWS: YES
@@ -81,7 +81,7 @@ targets:
               NSExtensionActivationSupportsImageWithMaxCount: 1
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: in.foodlens.cibo.share
+        PRODUCT_BUNDLE_IDENTIFIER: com.foodlens.cibo.share
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         CIBO_API_BASE_URL: https://cibo-api-op1m.onrender.com
         SKIP_INSTALL: YES
@@ -107,7 +107,7 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: in.foodlens.cibo.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.foodlens.cibo.widgets
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         SKIP_INSTALL: YES
 

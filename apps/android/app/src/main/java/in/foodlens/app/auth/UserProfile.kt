@@ -26,6 +26,8 @@ data class UserProfile(
     val goal: String? = null,           // see GOALS
     val goalInsight: String? = null,    // AI-generated, surfaced on the Goal card
     val hasAvatar: Boolean = false,
+    val scansUsed: Int = 0,
+    val scansLimit: Int = 16,
 )
 
 /** Display-friendly options for the goal picker. Wire string is `first`. */

@@ -36,7 +36,7 @@ private struct MainTabs: View {
                 .tag(Tab.plate)
 
             NavigationStack { LogsScreen() }
-                .tabItem { Label("Logs",  systemImage: "doc.text") }
+                .tabItem { Label("Diary", systemImage: "book.closed") }
                 .tag(Tab.logs)
 
             NavigationStack { ProfileScreen() }

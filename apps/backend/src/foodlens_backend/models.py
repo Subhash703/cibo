@@ -55,6 +55,11 @@ class User(Base):
     avatar_content_type: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)
     avatar_updated_at: Mapped[datetime | None] = mapped_column(nullable=True, default=None)
 
+    # Free-tier scan counter. Incremented on every authenticated
+    # /analyze-vision and /analyze-plate. Once it hits FREE_SCAN_LIMIT,
+    # those routes return 402 Payment Required until premium ships.
+    scans_used: Mapped[int] = mapped_column(default=0)
+
 
 class MealLog(Base):
     """A single confirmed order — one row per 'Yes, I'm ordering' tap."""

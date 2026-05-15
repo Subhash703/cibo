@@ -1,7 +1,7 @@
 import json as json_lib
 import logging
 from contextlib import asynccontextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -36,6 +36,8 @@ from .schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
     AuthResponse,
+    DailySummaryPoint,
+    HistoryResponse,
     LoginRequest,
     MatchedItem,
     MealLogPublic,
@@ -74,6 +76,8 @@ def _to_user_public(user: User) -> UserPublic:
         goal=user.goal,
         goal_insight=user.goal_insight,
         has_avatar=user.avatar_bytes is not None,
+        scans_used=user.scans_used or 0,
+        scans_limit=FREE_SCAN_LIMIT,
     )
 
 
@@ -120,6 +124,28 @@ app.add_middleware(
 )
 
 _MAX_IMAGE_BYTES = 4 * 1024 * 1024  # 4 MB
+
+# Free-tier cap. Anonymous /analyze-vision is excluded — the limit only
+# bites when the user is signed in (we have no other handle on them).
+FREE_SCAN_LIMIT = 16
+_PAYWALL_DETAIL = (
+    "You've used all {limit} free scans. Cibo Premium is coming soon — "
+    "we'll let you know the moment unlimited scans land."
+)
+
+
+def _enforce_scan_limit(user: User) -> None:
+    """Raise 402 when the signed-in user has burned through the trial."""
+    if user.scans_used >= FREE_SCAN_LIMIT:
+        raise HTTPException(
+            status_code=402,
+            detail=_PAYWALL_DETAIL.format(limit=FREE_SCAN_LIMIT),
+        )
+
+
+def _bump_scan_count(db: Session, user: User) -> None:
+    user.scans_used = (user.scans_used or 0) + 1
+    db.commit()
 
 
 def _gemini_error_to_http(e: genai_errors.APIError, route: str) -> HTTPException:
@@ -203,6 +229,9 @@ async def analyze_vision(
             detail=f"Image too large ({len(data)} bytes). Max {_MAX_IMAGE_BYTES}.",
         )
     mime = image.content_type or "image/jpeg"
+    user = optional_current_user(authorization=authorization, db=db)
+    if user is not None:
+        _enforce_scan_limit(user)
     try:
         core = await analyze_with_vision(data, mime_type=mime)
     except RuntimeError as e:
@@ -210,8 +239,8 @@ async def analyze_vision(
         raise HTTPException(status_code=500, detail=str(e)) from e
     except genai_errors.APIError as e:
         raise _gemini_error_to_http(e, route="/analyze-vision") from e
-
-    user = optional_current_user(authorization=authorization, db=db)
+    if user is not None:
+        _bump_scan_count(db, user)
     summary = _today_summary(db, user) if user else None
     return AnalyzeResponse(**core.model_dump(), daily_summary=summary)
 
@@ -236,6 +265,7 @@ async def analyze_plate(
             status_code=413,
             detail=f"Image too large ({len(data)} bytes). Max {_MAX_IMAGE_BYTES}.",
         )
+    _enforce_scan_limit(user)
     summary = _today_summary(db, user)
     mime = image.content_type or "image/jpeg"
     logger.info(
@@ -249,6 +279,7 @@ async def analyze_plate(
     except genai_errors.APIError as e:
         raise _gemini_error_to_http(e, route="/analyze-plate") from e
 
+    _bump_scan_count(db, user)
     return PlateAnalyzeResponse(**core.model_dump(), daily_summary=summary)
 
 
@@ -450,6 +481,66 @@ def me_meal_logs_today(
         .all()
     )
     return [_meal_log_to_public(log) for log in logs]
+
+
+@app.get("/me/daily-summaries", response_model=HistoryResponse)
+def me_daily_summaries(
+    days: int = 7,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> HistoryResponse:
+    """Per-day kcal + macro totals for the last `days` days (default 7).
+
+    Returns one entry per day, oldest first, including days with zero
+    logs (so the chart has a continuous x-axis). Plus a streak count and
+    "days the user hit their goal" count for the streak card."""
+    days = max(1, min(days, 90))
+    today = date.today()
+    earliest = today - timedelta(days=days - 1)
+
+    rows = (
+        db.query(MealLog)
+        .filter(
+            MealLog.user_id == user.id,
+            MealLog.log_date >= earliest,
+            MealLog.log_date <= today,
+        )
+        .all()
+    )
+
+    aggregated: dict[date, DailySummaryPoint] = {}
+    for row in rows:
+        bucket = aggregated.setdefault(
+            row.log_date,
+            DailySummaryPoint(date=row.log_date.isoformat()),
+        )
+        bucket.kcal      += row.kcal
+        bucket.protein_g += row.protein_g
+        bucket.fat_g     += row.fat_g
+        bucket.carbs_g   += row.carbs_g
+        bucket.log_count += 1
+
+    series: list[DailySummaryPoint] = []
+    for offset in range(days):
+        d = earliest + timedelta(days=offset)
+        series.append(aggregated.get(d, DailySummaryPoint(date=d.isoformat())))
+
+    target = user.daily_kcal_target or 2000
+    goal_hits = sum(1 for p in series if p.log_count > 0 and p.kcal <= target)
+
+    streak = 0
+    for point in reversed(series):
+        if point.log_count > 0:
+            streak += 1
+        else:
+            break
+
+    return HistoryResponse(
+        daily_kcal_target=target,
+        days=series,
+        streak_days=streak,
+        goal_hits=goal_hits,
+    )
 
 
 @app.post("/meal-logs", response_model=TodaySummary)

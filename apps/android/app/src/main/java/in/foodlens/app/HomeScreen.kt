@@ -83,14 +83,16 @@ fun HomeScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // Signed-out users get one obvious CTA — Sign in. Discoverability
-        // of the avatar in the corner was the #1 user complaint.
+        // Signed-out users get a single CTA — Sign in. We don't allow
+        // starting the floating bubble without an account so meals are
+        // tracked, scans are counted, and the analyzer can personalise.
         if (user == null) {
             CiboPrimaryButton(text = "Sign in to Cibo", onClick = onOpenProfile)
             Spacer(Modifier.height(8.dp))
-            CiboSecondaryButton(
-                text = if (isRunning) "Refresh Cibo" else "Start Cibo",
-                onClick = onRefreshBubble,
+            Text(
+                "Sign in to start Cibo. We'll track today's meals against your goal.",
+                style = CiboType.BodyMd,
+                color = CiboColors.OnSurfaceVariant,
             )
         } else {
             CiboPrimaryButton(

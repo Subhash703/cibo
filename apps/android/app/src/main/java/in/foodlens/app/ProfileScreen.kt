@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -99,6 +100,7 @@ fun ProfileScreen(
     onSignOut: () -> Unit,
     onSaveProfile: (UserProfile) -> Unit,
     onUploadAvatar: (Uri) -> Unit,
+    onOpenHistory: () -> Unit,
     onBack: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -162,6 +164,7 @@ fun ProfileScreen(
                     error = state.error,
                     onSaveProfile = onSaveProfile,
                     onUploadAvatar = onUploadAvatar,
+                    onOpenHistory = onOpenHistory,
                     onSignOut = onSignOut,
                 )
             }
@@ -301,6 +304,7 @@ private fun SignedInBody(
     error: String?,
     onSaveProfile: (UserProfile) -> Unit,
     onUploadAvatar: (Uri) -> Unit,
+    onOpenHistory: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     var goal by remember(user.dailyKcalTarget) { mutableIntStateOf(user.dailyKcalTarget) }
@@ -376,6 +380,8 @@ private fun SignedInBody(
             insight = user.goalInsight,
         )
 
+        ScanBudgetCard(used = user.scansUsed, limit = user.scansLimit)
+
         PersonaliseGoalCard(
             sex = sex,
             onSexChange = { sex = it },
@@ -399,6 +405,12 @@ private fun SignedInBody(
             loading = busy,
         )
 
+        CiboSecondaryButton(
+            text = "Your history",
+            onClick = onOpenHistory,
+            icon = Icons.AutoMirrored.Filled.TrendingUp,
+        )
+
         CiboSecondaryButton(text = "Sign out", onClick = onSignOut)
 
         error?.let {
@@ -414,6 +426,53 @@ private fun SignedInBody(
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ScanBudgetCard(used: Int, limit: Int) {
+    if (limit <= 0) return
+    val remaining = (limit - used).coerceAtLeast(0)
+    val fraction = (used.toFloat() / limit).coerceIn(0f, 1f)
+    val accent = if (remaining == 0) CiboColors.Warning else CiboColors.Primary
+    GlassCard {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Free trial", style = CiboType.H2, color = CiboColors.OnSurface)
+                Text(
+                    "$used / $limit",
+                    style = CiboType.BodyMd.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    ),
+                    color = accent,
+                )
+            }
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(CircleShape)
+                    .background(CiboColors.SurfaceContainerHigh),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(fraction)
+                        .height(6.dp)
+                        .clip(CircleShape)
+                        .background(accent),
+                )
+            }
+            Text(
+                if (remaining == 0) {
+                    "You've used all your free scans. Premium is coming soon."
+                } else {
+                    "$remaining free scan${if (remaining == 1) "" else "s"} left. Premium is coming soon — unlimited scans included."
+                },
+                style = CiboType.BodyMd,
+                color = CiboColors.OnSurfaceVariant,
+            )
         }
     }
 }

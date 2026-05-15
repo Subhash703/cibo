@@ -80,6 +80,8 @@ data class UserPublic(
     val goal: String? = null,
     val goalInsight: String? = null,
     val hasAvatar: Boolean = false,
+    val scansUsed: Int = 0,
+    val scansLimit: Int = 16,
 )
 
 fun UserPublic.toProfile(): `in`.foodlens.app.auth.UserProfile = `in`.foodlens.app.auth.UserProfile(
@@ -96,6 +98,8 @@ fun UserPublic.toProfile(): `in`.foodlens.app.auth.UserProfile = `in`.foodlens.a
     goal = goal,
     goalInsight = goalInsight,
     hasAvatar = hasAvatar,
+    scansUsed = scansUsed,
+    scansLimit = scansLimit,
 )
 
 @Serializable
@@ -151,6 +155,26 @@ data class MealLogPublic(
     val healthScore: Int,
     val items: List<MatchedItem> = emptyList(),
 )
+
+@Serializable
+data class DailySummaryPoint(
+    val date: String,        // ISO YYYY-MM-DD
+    val kcal: Int = 0,
+    val proteinG: Int = 0,
+    val fatG: Int = 0,
+    val carbsG: Int = 0,
+    val logCount: Int = 0,
+)
+
+@Serializable
+data class HistoryResponse(
+    val dailyKcalTarget: Int,
+    val days: List<DailySummaryPoint> = emptyList(),
+    val streakDays: Int = 0,
+    val goalHits: Int = 0,
+)
+
+class CiboHttpException(val code: Int, override val message: String) : RuntimeException(message)
 
 class AnalyzeClient(val baseUrl: String) {
 
@@ -271,6 +295,16 @@ class AnalyzeClient(val baseUrl: String) {
             execute(request, kotlinx.serialization.builtins.ListSerializer(MealLogPublic.serializer()))
         }
 
+    suspend fun getDailySummaries(idToken: String, days: Int = 7): HistoryResponse =
+        withContext(Dispatchers.IO) {
+            val request = Request.Builder()
+                .url("$baseUrl/me/daily-summaries?days=$days")
+                .header("Authorization", "Bearer $idToken")
+                .get()
+                .build()
+            execute(request, HistoryResponse.serializer())
+        }
+
     suspend fun logMeal(idToken: String, request: MealLogRequest): DailySummary =
         withContext(Dispatchers.IO) {
             val body = json.encodeToString(request).toRequestBody(JSON_MEDIA)
@@ -322,7 +356,9 @@ class AnalyzeClient(val baseUrl: String) {
     ): T {
         http.newCall(request).execute().use { response ->
             val raw = response.body?.string().orEmpty()
-            check(response.isSuccessful) { friendlyError(response.code, raw) }
+            if (!response.isSuccessful) {
+                throw CiboHttpException(response.code, friendlyError(response.code, raw))
+            }
             return json.decodeFromString(serializer, raw)
         }
     }

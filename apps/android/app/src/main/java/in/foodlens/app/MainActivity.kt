@@ -34,8 +34,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -83,9 +85,9 @@ private enum class OnboardingStep {
     Ready,
 }
 
-private enum class AppScreen { ONBOARDING, MAIN, PROFILE }
+private enum class AppScreen { ONBOARDING, MAIN, HISTORY }
 
-private enum class MainTab { HOME, PLATE }
+private enum class MainTab { HOME, PLATE, PROFILE }
 
 class MainActivity : ComponentActivity() {
 
@@ -137,8 +139,15 @@ class MainActivity : ComponentActivity() {
                             onRecheck = ::refreshPermissions,
                             onStart = {
                                 if (overlayGranted && usageGranted) {
-                                    FloatingButtonService.start(this@MainActivity)
-                                    screen = AppScreen.MAIN
+                                    if (foodLensApp.authState.isSignedIn) {
+                                        FloatingButtonService.start(this@MainActivity)
+                                        screen = AppScreen.MAIN
+                                    } else {
+                                        // Sign in first — Cibo's verdict is personalised
+                                        // and the floating bubble counts toward the trial.
+                                        screen = AppScreen.MAIN
+                                        tab = MainTab.PROFILE
+                                    }
                                 } else {
                                     if (!overlayGranted) requestOverlayPermission()
                                     else if (!usageGranted) requestUsageAccess()
@@ -191,9 +200,33 @@ class MainActivity : ComponentActivity() {
                                                 ),
                                             ),
                                         )
+                                        NavigationBarItem(
+                                            selected = tab == MainTab.PROFILE,
+                                            onClick = { tab = MainTab.PROFILE },
+                                            icon = {
+                                                Icon(
+                                                    if (tab == MainTab.PROFILE) {
+                                                        Icons.Filled.Person
+                                                    } else {
+                                                        Icons.Outlined.Person
+                                                    },
+                                                    contentDescription = "Profile",
+                                                )
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                ),
+                                            ),
+                                        )
                                     }
                                 },
                             ) { padding ->
+                                // Back from Plate or Profile takes the user to Home
+                                // first, instead of minimising the app.
+                                androidx.activity.compose.BackHandler(enabled = tab != MainTab.HOME) {
+                                    tab = MainTab.HOME
+                                }
                                 AnimatedContent(
                                     targetState = tab,
                                     transitionSpec = {
@@ -209,7 +242,7 @@ class MainActivity : ComponentActivity() {
                                             user = user,
                                             isRunning = running,
                                             summary = dailySummary,
-                                            onOpenProfile = { screen = AppScreen.PROFILE },
+                                            onOpenProfile = { tab = MainTab.PROFILE },
                                             onRefreshBubble = {
                                                 if (running) {
                                                     FloatingButtonService.refresh(this@MainActivity)
@@ -230,50 +263,59 @@ class MainActivity : ComponentActivity() {
                                             user = user,
                                             analyzer = foodLensApp.analyzer,
                                             idToken = foodLensApp.authState.idToken,
-                                            onSignInRequested = { screen = AppScreen.PROFILE },
+                                            onSignInRequested = { tab = MainTab.PROFILE },
+                                        )
+                                        MainTab.PROFILE -> ProfileScreen(
+                                            state = ProfileUiState(
+                                                user = user,
+                                                busy = profileBusy,
+                                                error = profileError,
+                                            ),
+                                            onAuthSubmit = { email, password, isRegister, name ->
+                                                profileError = null
+                                                profileBusy = true
+                                                coroutineScope.launch {
+                                                    runCatching { handleAuth(email, password, isRegister, name) }
+                                                        .onFailure {
+                                                            profileError = it.message ?: "Couldn't sign in"
+                                                        }
+                                                    profileBusy = false
+                                                }
+                                            },
+                                            onSignOut = {
+                                                foodLensApp.authState.signOut()
+                                            },
+                                            onSaveProfile = { updated ->
+                                                profileError = null
+                                                profileBusy = true
+                                                coroutineScope.launch {
+                                                    runCatching { saveProfile(updated) }
+                                                        .onFailure {
+                                                            profileError = it.message ?: "Couldn't save profile"
+                                                        }
+                                                    profileBusy = false
+                                                }
+                                            },
+                                            onUploadAvatar = { uri ->
+                                                profileBusy = true
+                                                coroutineScope.launch {
+                                                    runCatching { uploadAvatar(uri) }
+                                                        .onFailure { showAvatarError(it) }
+                                                    profileBusy = false
+                                                }
+                                            },
+                                            onOpenHistory = { screen = AppScreen.HISTORY },
+                                            onBack = { tab = MainTab.HOME },
                                         )
                                     }
                                 }
                             }
                         }
 
-                        AppScreen.PROFILE -> ProfileScreen(
-                            state = ProfileUiState(
-                                user = user,
-                                busy = profileBusy,
-                                error = profileError,
-                            ),
-                            onAuthSubmit = { email, password, isRegister, name ->
-                                profileError = null
-                                profileBusy = true
-                                coroutineScope.launch {
-                                    runCatching { handleAuth(email, password, isRegister, name) }
-                                        .onFailure {
-                                            profileError = it.message ?: "Couldn't sign in"
-                                        }
-                                    profileBusy = false
-                                }
-                            },
-                            onSignOut = {
-                                foodLensApp.authState.signOut()
-                            },
-                            onSaveProfile = { updated ->
-                                profileError = null
-                                profileBusy = true
-                                coroutineScope.launch {
-                                    runCatching { saveProfile(updated) }
-                                        .onFailure { profileError = it.message ?: "Couldn't save profile" }
-                                    profileBusy = false
-                                }
-                            },
-                            onUploadAvatar = { uri ->
-                                profileBusy = true
-                                coroutineScope.launch {
-                                    runCatching { uploadAvatar(uri) }
-                                        .onFailure { showAvatarError(it) }
-                                    profileBusy = false
-                                }
-                            },
+                        AppScreen.HISTORY -> HistoryScreen(
+                            analyzer = foodLensApp.analyzer,
+                            idToken = foodLensApp.authState.idToken,
+                            user = user,
                             onBack = { screen = AppScreen.MAIN },
                         )
                     }

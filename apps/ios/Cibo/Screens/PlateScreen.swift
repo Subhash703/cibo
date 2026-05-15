@@ -8,6 +8,7 @@ struct PlateScreen: View {
     @State private var state: PlateState = .idle
     @State private var pickerItem: PhotosPickerItem?
     @State private var showCamera = false
+    @State private var paywallMessage: String?
 
     enum PlateState: Equatable {
         case idle
@@ -40,6 +41,13 @@ struct PlateScreen: View {
         .onChange(of: pickerItem) { _, item in
             guard let item else { return }
             Task { await loadFromPicker(item) }
+        }
+        .sheet(item: Binding(
+            get: { paywallMessage.map { PaywallSheet.Item(text: $0) } },
+            set: { paywallMessage = $0?.text }
+        )) { item in
+            PaywallSheet(message: item.text) { paywallMessage = nil }
+                .presentationDetents([.medium])
         }
         .sheet(isPresented: $showCamera) {
             CameraPicker { img in
@@ -83,6 +91,17 @@ struct PlateScreen: View {
             }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                 state = .result(img, res)
+            }
+            await auth.refreshMe()  // pulls updated scans_used
+        } catch let cibo as CiboError {
+            if #available(iOS 16.2, *) {
+                await LiveActivityController.fail(activity, message: "Couldn't analyze")
+            }
+            if case .http(402, let msg) = cibo {
+                state = .idle
+                paywallMessage = msg
+            } else {
+                state = .error(cibo.localizedDescription)
             }
         } catch {
             if #available(iOS 16.2, *) {

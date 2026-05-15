@@ -22,6 +22,7 @@
 		4C883DF0F3C1FE352DE17986 /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */; };
 		51A70372C87598B4037B0ED5 /* CiboShortcutsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F180171AAFFBC1667C6834C /* CiboShortcutsProvider.swift */; };
 		53EF6BA7498E7CD017F8F113 /* CartVerdictAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */; };
+		5E6598C0D22BCB6BDD822E44 /* HistoryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C478A1E2F9EE220D3ECF879 /* HistoryScreen.swift */; };
 		67E143C0D3202AFB8585024F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6006958221F32B312B8A7A39 /* Assets.xcassets */; };
 		6A6DD1215E56947936EA34A2 /* DashboardScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 785F8E3F9813E794537B694E /* DashboardScreen.swift */; };
 		6F5BF0BFB08F357DF190703C /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */; };
@@ -44,6 +45,7 @@
 		BE6AC770224F1CC60B74A199 /* CartVerdictAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */; };
 		BEEAA6F93EF35C3DE4F76779 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8F1F61A47E3D0CC8267B8A /* GlassCard.swift */; };
 		C27EE5F68DC42FB392DE24A1 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4933B5FA14B4DFD95F4F4E5 /* AppGroup.swift */; };
+		C49A71FD821CF21779B77103 /* PaywallSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E12138EFC565703EC450DC7 /* PaywallSheet.swift */; };
 		CF1F935B0FC4E3D178CFB8E3 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 060B20CB4CCF1CEF0D9BB0CD /* PrimaryButton.swift */; };
 		D19F0CD390496572E81A8FDE /* PlusJakartaSans-VariableFont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4092DB80D1BEA5D87096A975 /* PlusJakartaSans-VariableFont.ttf */; };
 		D56F7E42A4F5143E1FCAF40D /* VerdictBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60FC8A704944ACEF15960EE3 /* VerdictBanner.swift */; };
@@ -52,6 +54,7 @@
 		DF52BFDACAD61F8A65091A1F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E618472C3DE55B39F59C3383 /* Theme.swift */; };
 		E32CA6DCE3E566BE3202F5D5 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8808F4E1401C78F746954252 /* InsightCard.swift */; };
 		E4B7121FB2B386BB82B25C03 /* InsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8808F4E1401C78F746954252 /* InsightCard.swift */; };
+		E9F01AB6438F67D2AA3DB9BF /* PaywallSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E12138EFC565703EC450DC7 /* PaywallSheet.swift */; };
 		EA3F709F1547B1AAE68FC297 /* CiboAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F28E766CBB125791DB9C63F6 /* CiboAvatar.swift */; };
 		EEDC936DAD91B7F48348ADF3 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DC3A4B567A983C860B523A /* OnboardingFlow.swift */; };
 		EF5CFD2CE5FC7F6DC806F5A4 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D332B1C76877699E9E34CAB8 /* ShareViewController.swift */; };
@@ -103,13 +106,15 @@
 		45AED3E8635C805FD95A5719 /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
 		4A58D4B412A0FD4BE4F10878 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
 		4B8F1F61A47E3D0CC8267B8A /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
+		4E12138EFC565703EC450DC7 /* PaywallSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallSheet.swift; sourceTree = "<group>"; };
 		51AD7984B3E64AFA5A264F86 /* ProfileEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditSheet.swift; sourceTree = "<group>"; };
 		54E1FB9352CA5067EBCFDCB2 /* StatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPill.swift; sourceTree = "<group>"; };
 		6006958221F32B312B8A7A39 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		60FC8A704944ACEF15960EE3 /* VerdictBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerdictBanner.swift; sourceTree = "<group>"; };
 		64CA3252F7C82750EBAB7AA7 /* SignInScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInScreen.swift; sourceTree = "<group>"; };
 		6678B0A33867F24A4DC0F603 /* ProcessingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingView.swift; sourceTree = "<group>"; };
-		68677BF29FF339F5E3BAB553 /* ShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		68677BF29FF339F5E3BAB553 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		6C478A1E2F9EE220D3ECF879 /* HistoryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryScreen.swift; sourceTree = "<group>"; };
 		785F8E3F9813E794537B694E /* DashboardScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardScreen.swift; sourceTree = "<group>"; };
 		8808F4E1401C78F746954252 /* InsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightCard.swift; sourceTree = "<group>"; };
 		ACB58F4FBE34FF56B151E809 /* Fraunces-VariableFont.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fraunces-VariableFont.ttf"; sourceTree = "<group>"; };
@@ -124,10 +129,10 @@
 		DA781F795FE77328BAF8ECCE /* CiboWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CiboWidgets.entitlements; sourceTree = "<group>"; };
 		DE3A2E2B0D181E1485887364 /* CartVerdictAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartVerdictAttributes.swift; sourceTree = "<group>"; };
 		E618472C3DE55B39F59C3383 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		EF3286B101F80F804DB63320 /* CiboWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CiboWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF3286B101F80F804DB63320 /* CiboWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CiboWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F28E766CBB125791DB9C63F6 /* CiboAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CiboAvatar.swift; sourceTree = "<group>"; };
 		F44ECC389742094070BB7959 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
-		FB2D2A82F1417D26EB2CF42E /* Cibo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Cibo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB2D2A82F1417D26EB2CF42E /* Cibo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cibo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FDFFD1D64F121007ABCE23A0 /* PlusJakartaSans-Italic-VariableFont.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Italic-VariableFont.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -191,6 +196,7 @@
 			isa = PBXGroup;
 			children = (
 				785F8E3F9813E794537B694E /* DashboardScreen.swift */,
+				6C478A1E2F9EE220D3ECF879 /* HistoryScreen.swift */,
 				C6DC3A4B567A983C860B523A /* OnboardingFlow.swift */,
 				B321FA53FAB69ABB9A5488E6 /* PlateScreen.swift */,
 				51AD7984B3E64AFA5A264F86 /* ProfileEditSheet.swift */,
@@ -236,6 +242,7 @@
 				4B8F1F61A47E3D0CC8267B8A /* GlassCard.swift */,
 				8808F4E1401C78F746954252 /* InsightCard.swift */,
 				BB3F99C86EBB22B6B08F62B9 /* KcalRing.swift */,
+				4E12138EFC565703EC450DC7 /* PaywallSheet.swift */,
 				060B20CB4CCF1CEF0D9BB0CD /* PrimaryButton.swift */,
 				54E1FB9352CA5067EBCFDCB2 /* StatusPill.swift */,
 				60FC8A704944ACEF15960EE3 /* VerdictBanner.swift */,
@@ -337,17 +344,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-					3D85744728668EFB4B1E860E = {
-						DevelopmentTeam = "";
-					};
-					761FDAE857B31DB0AB07B951 = {
-						DevelopmentTeam = "";
-					};
-					CB3D523A395DAF8E74705AEB = {
-						DevelopmentTeam = "";
-					};
-				};
 			};
 			buildConfigurationList = 11655E3337DCC331A36F29EC /* Build configuration list for PBXProject "Cibo" */;
 			developmentRegion = en;
@@ -398,6 +394,7 @@
 				78B79FE37AACA6FC1888B3A4 /* KcalRing.swift in Sources */,
 				6F5BF0BFB08F357DF190703C /* LiveActivityController.swift in Sources */,
 				1D99B519211A115F4FA8FCCC /* Models.swift in Sources */,
+				C49A71FD821CF21779B77103 /* PaywallSheet.swift in Sources */,
 				CF1F935B0FC4E3D178CFB8E3 /* PrimaryButton.swift in Sources */,
 				011B3C00A5EBEFB238864808 /* ProcessingView.swift in Sources */,
 				EF5CFD2CE5FC7F6DC806F5A4 /* ShareViewController.swift in Sources */,
@@ -433,11 +430,13 @@
 				51A70372C87598B4037B0ED5 /* CiboShortcutsProvider.swift in Sources */,
 				6A6DD1215E56947936EA34A2 /* DashboardScreen.swift in Sources */,
 				BEEAA6F93EF35C3DE4F76779 /* GlassCard.swift in Sources */,
+				5E6598C0D22BCB6BDD822E44 /* HistoryScreen.swift in Sources */,
 				E4B7121FB2B386BB82B25C03 /* InsightCard.swift in Sources */,
 				902427C7674588FD10AE5919 /* KcalRing.swift in Sources */,
 				4C883DF0F3C1FE352DE17986 /* LiveActivityController.swift in Sources */,
 				01D7146FB1E021DD5BEBF2D8 /* Models.swift in Sources */,
 				EEDC936DAD91B7F48348ADF3 /* OnboardingFlow.swift in Sources */,
+				E9F01AB6438F67D2AA3DB9BF /* PaywallSheet.swift in Sources */,
 				8BF185780BF09342312DA4BA /* PlateScreen.swift in Sources */,
 				752AB99AB426682619FC582B /* PrimaryButton.swift in Sources */,
 				1BD01CBC27464BEE724E9E99 /* ProfileEditSheet.swift in Sources */,

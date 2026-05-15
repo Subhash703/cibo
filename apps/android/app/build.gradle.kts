@@ -73,4 +73,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     // Coil for AsyncImage — used by CiboAvatar to render uploaded photos.
     implementation("io.coil-kt:coil-compose:2.7.0")
+    // Vico for the History screen charts (line + bar).
+    implementation("com.patrykandpatrick.vico:compose:1.14.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
 }

@@ -86,6 +86,10 @@ actor AnalyzeClient {
         try await get("/me/meal-logs/today", token: token)
     }
 
+    func dailySummaries(token: String, days: Int = 7) async throws -> HistoryResponse {
+        try await get("/me/daily-summaries?days=\(days)", token: token)
+    }
+
     func logMeal(token: String, request: MealLogRequest) async throws -> DailySummary {
         try await post("/meal-logs", body: request, token: token)
     }

@@ -77,6 +77,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import `in`.foodlens.app.auth.UserProfile
 import `in`.foodlens.app.network.AnalyzeClient
+import `in`.foodlens.app.network.CiboHttpException
 import `in`.foodlens.app.network.CoachVerdict
 import `in`.foodlens.app.network.DailySummary
 import `in`.foodlens.app.network.MatchedItem
@@ -86,6 +87,7 @@ import `in`.foodlens.app.network.PlateAnalyzeResponse
 import `in`.foodlens.app.ui.CiboColors
 import `in`.foodlens.app.ui.CiboType
 import `in`.foodlens.app.ui.InsightCard
+import `in`.foodlens.app.ui.PaywallDialog
 import `in`.foodlens.app.ui.VerdictSignal
 import `in`.foodlens.app.ui.VerdictBanner as CiboVerdictBanner
 import java.io.ByteArrayOutputStream
@@ -140,6 +142,7 @@ fun PlateScreen(
     var summaryLoading by remember { mutableStateOf(true) }
     var state by remember { mutableStateOf<PlateUiState>(PlateUiState.Idle) }
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+    var paywallMessage by remember { mutableStateOf<String?>(null) }
 
     suspend fun refreshDaily() {
         runCatching { analyzer.getTodaySummary(idToken) }.onSuccess { app.setSummary(it) }
@@ -160,6 +163,13 @@ fun PlateScreen(
                 val response = analyzer.analyzePlate(idToken, jpeg)
                 state = PlateUiState.Result(response, uri)
                 response.dailySummary?.let { app.setSummary(it) }
+            } catch (e: CiboHttpException) {
+                if (e.code == 402) {
+                    state = PlateUiState.Idle
+                    paywallMessage = e.message
+                } else {
+                    state = PlateUiState.Error(e.message)
+                }
             } catch (t: Throwable) {
                 state = PlateUiState.Error(t.message ?: "Couldn't analyse this photo")
             }
@@ -190,6 +200,10 @@ fun PlateScreen(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         if (uri != null) analyzeUri(uri)
+    }
+
+    paywallMessage?.let { msg ->
+        PaywallDialog(message = msg, onDismiss = { paywallMessage = null })
     }
 
     AnimatedContent(

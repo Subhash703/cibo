@@ -76,6 +76,11 @@ struct UserPublic: Codable, Hashable {
     // missing — it raises keyNotFound. `picture` is the actual signal we
     // use in CiboAvatar; this flag is bookkeeping only.
     var hasAvatar: Bool? = nil
+
+    // Free-tier scan budget. Server returns these only on newer builds —
+    // both optional so old responses still decode.
+    var scansUsed: Int? = nil
+    var scansLimit: Int? = nil
 }
 
 struct AuthResponse: Codable {
@@ -118,4 +123,21 @@ struct MealLogPublic: Codable, Identifiable, Hashable {
     var carbsG: Int
     var healthScore: Int
     var items: [MatchedItem] = []
+}
+
+struct DailySummaryPoint: Codable, Identifiable, Hashable {
+    var date: String   // ISO YYYY-MM-DD
+    var kcal: Int = 0
+    var proteinG: Int = 0
+    var fatG: Int = 0
+    var carbsG: Int = 0
+    var logCount: Int = 0
+    var id: String { date }
+}
+
+struct HistoryResponse: Codable {
+    var dailyKcalTarget: Int
+    var days: [DailySummaryPoint]
+    var streakDays: Int = 0
+    var goalHits: Int = 0
 }

@@ -15,6 +15,8 @@ struct ProfileScreen: View {
                 VStack(alignment: .leading, spacing: CiboSpacing.lg) {
                     headerCard
                     goalCard
+                    scanBudgetCard
+                    historyLink
                     personalizeCard
                     accountCard
                     Text("Cibo v0.1 — proudly AI crafted")
@@ -113,6 +115,78 @@ struct ProfileScreen: View {
                 )
             }
         }
+    }
+
+    @ViewBuilder
+    private var scanBudgetCard: some View {
+        let used = auth.user?.scansUsed ?? 0
+        let limit = auth.user?.scansLimit ?? 16
+        if limit > 0 {
+            let remaining = max(0, limit - used)
+            let fraction = min(1, Double(used) / Double(limit))
+            GlassCard {
+                VStack(alignment: .leading, spacing: CiboSpacing.sm) {
+                    HStack {
+                        Text("Free trial")
+                            .font(CiboFont.h2)
+                            .foregroundStyle(CiboColor.onSurface)
+                        Spacer()
+                        Text("\(used) / \(limit)")
+                            .font(CiboFont.body(15, weight: .semibold))
+                            .foregroundStyle(remaining == 0 ? CiboColor.warning : CiboColor.primary)
+                            .monospacedDigit()
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(CiboColor.surfaceContainerHigh)
+                            Capsule()
+                                .fill(remaining == 0 ? CiboColor.warning : CiboColor.primary)
+                                .frame(width: geo.size.width * CGFloat(fraction))
+                        }
+                    }
+                    .frame(height: 6)
+                    Text(
+                        remaining == 0
+                        ? "You've used all your free scans. Premium is coming soon."
+                        : "\(remaining) free scan\(remaining == 1 ? "" : "s") left. Premium is coming soon — unlimited scans included."
+                    )
+                    .font(CiboFont.bodyMd)
+                    .foregroundStyle(CiboColor.onSurfaceVariant)
+                }
+            }
+        }
+    }
+
+    private var historyLink: some View {
+        NavigationLink(destination: HistoryScreen()) {
+            HStack(spacing: CiboSpacing.md) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundStyle(CiboColor.primary)
+                    .font(.system(size: 18, weight: .semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your history")
+                        .font(CiboFont.h2)
+                        .foregroundStyle(CiboColor.onSurface)
+                    Text("Trends, streaks, days you hit your goal.")
+                        .font(CiboFont.bodyMd)
+                        .foregroundStyle(CiboColor.onSurfaceVariant)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(CiboColor.onSurfaceVariant)
+            }
+            .padding(CiboSpacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: CiboRadius.xl, style: .continuous)
+                    .fill(CiboColor.surfaceContainer)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CiboRadius.xl, style: .continuous)
+                    .strokeBorder(CiboColor.onSurface.opacity(0.04), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var personalizeCard: some View {
