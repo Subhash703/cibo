@@ -36,7 +36,7 @@ import `in`.foodlens.app.network.MatchedItem
  * corner radius via [ValueAnimator]. Inner content crossfades.
  *
  * If the user is signed in, [showResult] adds a "Remaining today" section
- * and "Yes, ordering / No" action buttons. Tapping "Yes, ordering"
+ * and "Add to my day / No" action buttons. Tapping "Add to my day"
  * fires [onConfirmOrder] — wired by [`in`.foodlens.app.FoodLensApp] to
  * POST a meal log and call [showOrderConfirmed] on the way back.
  */
@@ -48,7 +48,7 @@ class OverlayBubbleManager(private val appContext: Context) {
     /** Wired by FloatingButtonService at startup. Invoked when the user taps the AI circle. */
     var onCircleTap: () -> Unit = {}
 
-    /** Wired by FoodLensApp. Fires when the user taps "Yes, ordering it". */
+    /** Wired by FoodLensApp. Fires when the user taps "Add to my day". */
     var onConfirmOrder: (AnalyzeResponse) -> Unit = {}
 
     private var rootView: FrameLayout? = null
@@ -501,7 +501,7 @@ class OverlayBubbleManager(private val appContext: Context) {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         val confirm = TextView(appContext).apply {
-            text = "Yes, ordering it"
+            text = "Add to my day"
             setTextColor(0xFF0F1722.toInt())
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             setTypeface(Typeface.DEFAULT_BOLD)

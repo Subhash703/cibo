@@ -294,7 +294,7 @@ private struct ResultView: View {
 
                 HStack(spacing: CiboSpacing.gutter) {
                     SecondaryButton(title: "Discard") { onDiscard() }
-                    PrimaryButton(title: "I ate this", icon: "checkmark") { onLog() }
+                    PrimaryButton(title: "Add to my day", icon: "checkmark") { onLog() }
                 }
                 .padding(.top, CiboSpacing.sm)
             }

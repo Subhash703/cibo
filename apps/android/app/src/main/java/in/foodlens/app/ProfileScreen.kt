@@ -2,6 +2,7 @@ package `in`.foodlens.app
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -63,6 +64,14 @@ import androidx.compose.ui.unit.sp
 import `in`.foodlens.app.auth.ACTIVITY_LEVELS
 import `in`.foodlens.app.auth.UserProfile
 import `in`.foodlens.app.auth.computeSuggestedKcal
+import `in`.foodlens.app.ui.CiboColors
+import `in`.foodlens.app.ui.CiboPrimaryButton
+import `in`.foodlens.app.ui.CiboSecondaryButton
+import `in`.foodlens.app.ui.CiboType
+import `in`.foodlens.app.ui.GlassCard
+import `in`.foodlens.app.ui.InsightCard
+import `in`.foodlens.app.ui.StatusPill
+import `in`.foodlens.app.ui.StatusTone
 
 data class ProfileUiState(
     val user: UserProfile?,
@@ -149,23 +158,20 @@ private fun SignedOutSection(
     val canSubmit = emailValid && passwordValid && !busy
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+        GlassCard {
+            Column {
                 Text(
-                    if (isRegister) "Create your Cibo account" else "Sign in to Cibo",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    if (isRegister) "Create your Cibo" else "Welcome back",
+                    style = CiboType.DisplaySm,
+                    color = CiboColors.OnSurface,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "Save a daily calorie goal. When you confirm an order, " +
                         "Cibo subtracts those calories from your goal — every " +
                         "future cart shows how much room you have left.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                    style = CiboType.BodyMd,
+                    color = CiboColors.OnSurfaceVariant,
                 )
             }
         }
@@ -224,35 +230,14 @@ private fun SignedOutSection(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Button(
+        CiboPrimaryButton(
+            text = if (isRegister) "Create account" else "Sign in",
             onClick = {
-                onSubmit(
-                    email,
-                    password,
-                    isRegister,
-                    name.takeIf { it.isNotBlank() },
-                )
+                onSubmit(email, password, isRegister, name.takeIf { it.isNotBlank() })
             },
             enabled = canSubmit,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            if (busy) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
-                )
-            } else {
-                Text(
-                    if (isRegister) "Create account" else "Sign in",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
+            loading = busy,
+        )
 
         TextButton(
             onClick = { isRegister = !isRegister },
@@ -345,37 +330,14 @@ private fun SignedInBody(
             suggestion = suggestion,
         )
 
-        Button(
+        CiboPrimaryButton(
+            text = if (dirty) "Save changes" else "Saved",
             onClick = { onSaveProfile(updated) },
             enabled = dirty && !busy,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            if (busy) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
-                )
-            } else {
-                Text(
-                    if (dirty) "Save changes" else "Saved",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
+            loading = busy,
+        )
 
-        OutlinedButton(
-            onClick = onSignOut,
-            enabled = !busy,
-            modifier = Modifier.fillMaxWidth().height(46.dp),
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            Text("Sign out")
-        }
+        CiboSecondaryButton(text = "Sign out", onClick = onSignOut)
 
         error?.let {
             Card(
@@ -400,30 +362,32 @@ private fun GoalSliderCard(
     onGoalChange: (Int) -> Unit,
     suggestion: Int?,
 ) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                "Daily calorie goal",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-            )
+    GlassCard {
+        Column {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Daily Goal",
+                    style = CiboType.H1,
+                    color = CiboColors.OnSurface,
+                )
+                StatusPill(text = "Active", tone = StatusTone.Positive)
+            }
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     "$goal",
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = CiboType.DisplayLg.copy(fontSize = 44.sp),
+                    color = CiboColors.Primary,
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "kcal / day",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    style = CiboType.BodyLg,
+                    color = CiboColors.OnSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
@@ -461,8 +425,13 @@ private fun GoalSliderCard(
                 }
             } ?: Text(
                 "We'll show this on every cart you scan.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                style = CiboType.BodyMd,
+                color = CiboColors.OnSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
+            InsightCard(
+                label = "AI INSIGHT",
+                text = "This goal is optimized for consistent energy and metabolic health based on your activity levels.",
             )
         }
     }
@@ -487,11 +456,7 @@ private fun PersonaliseGoalCard(
     val anyFilled = sex != null || birthYear != null || weightKg != null ||
         heightCm != null || activityLevel != null
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
+    GlassCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
         Column {
             Row(
                 modifier = Modifier
@@ -639,12 +604,13 @@ private fun Avatar(name: String?, email: String, size: androidx.compose.ui.unit.
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
+            .background(CiboColors.SurfaceContainerHigh)
+            .border(width = 2.dp, color = CiboColors.Primary, shape = CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             initial,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = CiboColors.Primary,
             fontSize = (size.value / 2.4).sp,
             fontWeight = FontWeight.Bold,
         )

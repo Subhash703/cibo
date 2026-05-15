@@ -62,10 +62,15 @@ final class AuthStore: ObservableObject {
     }
 
     func updateGoal(kcal: Int) async {
+        await updateProfile(ProfileUpdate(dailyKcalTarget: kcal))
+    }
+
+    /// Generic profile patch — used by the Edit Info sheet.
+    func updateProfile(_ update: ProfileUpdate) async {
         guard let token else { return }
         do {
             let updated = try await AnalyzeClient.shared.updateProfile(
-                token: token, update: ProfileUpdate(dailyKcalTarget: kcal)
+                token: token, update: update
             )
             self.user = updated
         } catch {

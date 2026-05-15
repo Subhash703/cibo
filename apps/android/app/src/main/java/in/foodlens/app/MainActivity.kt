@@ -69,6 +69,7 @@ import `in`.foodlens.app.network.AnalyzeClient
 import `in`.foodlens.app.network.ProfileUpdate
 import `in`.foodlens.app.network.toProfile
 import `in`.foodlens.app.overlay.FloatingButtonService
+import `in`.foodlens.app.ui.CiboTheme
 import kotlinx.coroutines.launch
 
 private enum class OnboardingStep {
@@ -105,13 +106,21 @@ class MainActivity : ComponentActivity() {
         if (overlayGranted && usageGranted) step = OnboardingStep.Ready
 
         setContent {
-            MaterialTheme(colorScheme = brandDarkScheme()) {
+            CiboTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val user by foodLensApp.authState.user.collectAsState()
+                    val dailySummary by foodLensApp.dailySummary.collectAsState()
                     val coroutineScope = rememberCoroutineScope()
+
+                    // Whenever the user signs in (or relaunch with a saved
+                    // token), pull today's numbers so HomeScreen has data
+                    // before the user ever opens the Plate tab.
+                    androidx.compose.runtime.LaunchedEffect(user?.email) {
+                        if (user != null) foodLensApp.refreshToday()
+                    }
 
                     when (screen) {
                         AppScreen.ONBOARDING -> OnboardingScreen(
@@ -195,6 +204,7 @@ class MainActivity : ComponentActivity() {
                                         MainTab.HOME -> HomeScreen(
                                             user = user,
                                             isRunning = running,
+                                            summary = dailySummary,
                                             onOpenProfile = { screen = AppScreen.PROFILE },
                                             onRefreshBubble = {
                                                 if (running) {
@@ -362,15 +372,6 @@ class MainActivity : ComponentActivity() {
         OnboardingStep.Ready -> OnboardingStep.Ready
     }
 }
-
-private fun brandDarkScheme(): ColorScheme = darkColorScheme(
-    primary = Color(0xFF1ED4B6),
-    onPrimary = Color(0xFF0F1722),
-    background = Color(0xFF0F1722),
-    surface = Color(0xFF15202B),
-    onBackground = Color(0xFFE7EEF6),
-    onSurface = Color(0xFFE7EEF6),
-)
 
 @Composable
 private fun OnboardingScreen(

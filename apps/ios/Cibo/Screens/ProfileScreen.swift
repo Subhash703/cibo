@@ -4,6 +4,7 @@ struct ProfileScreen: View {
     @EnvironmentObject private var auth: AuthStore
     @State private var goal: Double = 2000
     @State private var personalizeOpen = false
+    @State private var showEditSheet = false
 
     var body: some View {
         ZStack {
@@ -26,6 +27,7 @@ struct ProfileScreen: View {
         }
         .navigationBarHidden(true)
         .onAppear { goal = Double(auth.user?.dailyKcalTarget ?? 2000) }
+        .sheet(isPresented: $showEditSheet) { ProfileEditSheet() }
     }
 
     private var headerCard: some View {
@@ -116,16 +118,35 @@ struct ProfileScreen: View {
                 .buttonStyle(.plain)
 
                 if personalizeOpen {
-                    FlexibleHStack(spacing: 8) {
-                        if let s = auth.user?.sex { CiboChip(label: s.capitalized) }
-                        if let y = auth.user?.birthYear { CiboChip(label: "\(y)") }
-                        if let w = auth.user?.weightKg { CiboChip(label: "\(Int(w)) kg") }
-                        if let h = auth.user?.heightCm { CiboChip(label: "\(Int(h)) cm") }
-                        if let a = auth.user?.activityLevel { CiboChip(label: a.capitalized) }
+                    if hasAnyPersonalization {
+                        FlowLayout(spacing: 8) {
+                            if let s = auth.user?.sex { CiboChip(label: s.capitalized) }
+                            if let y = auth.user?.birthYear { CiboChip(label: "\(y)") }
+                            if let w = auth.user?.weightKg { CiboChip(label: "\(Int(w)) kg") }
+                            if let h = auth.user?.heightCm { CiboChip(label: "\(Int(h)) cm") }
+                            if let a = auth.user?.activityLevel { CiboChip(label: a.capitalized) }
+                        }
+                    } else {
+                        Text("No metrics yet. Add them so Cibo can personalise every verdict to your body.")
+                            .font(CiboFont.bodyMd)
+                            .foregroundStyle(CiboColor.onSurfaceVariant)
                     }
+
+                    SecondaryButton(
+                        title: hasAnyPersonalization ? "Edit info" : "Add my info",
+                        icon: "pencil"
+                    ) { showEditSheet = true }
                 }
             }
         }
+    }
+
+    private var hasAnyPersonalization: Bool {
+        auth.user?.sex != nil
+            || auth.user?.birthYear != nil
+            || auth.user?.weightKg != nil
+            || auth.user?.heightCm != nil
+            || auth.user?.activityLevel != nil
     }
 
     private var accountCard: some View {

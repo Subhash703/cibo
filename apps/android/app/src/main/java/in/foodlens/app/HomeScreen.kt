@@ -1,12 +1,12 @@
 package `in`.foodlens.app
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,30 +15,38 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import `in`.foodlens.app.auth.UserProfile
+import `in`.foodlens.app.network.DailySummary
+import `in`.foodlens.app.ui.CiboColors
+import `in`.foodlens.app.ui.CiboPrimaryButton
+import `in`.foodlens.app.ui.CiboSecondaryButton
+import `in`.foodlens.app.ui.CiboType
+import `in`.foodlens.app.ui.GlassCard
+import `in`.foodlens.app.ui.InsightCard
+import `in`.foodlens.app.ui.KcalRing
+import `in`.foodlens.app.ui.MacroBar
+import `in`.foodlens.app.ui.StatusPill
+import `in`.foodlens.app.ui.StatusTone
 import java.time.LocalTime
 
 @Composable
 fun HomeScreen(
     user: UserProfile?,
     isRunning: Boolean,
+    summary: DailySummary?,
     onOpenProfile: () -> Unit,
     onRefreshBubble: () -> Unit,
     onStopBubble: () -> Unit,
@@ -47,12 +55,9 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
-        // Scrollable top section. The bottom action buttons stay pinned —
-        // weight(1f) gives the scroll viewport whatever space the buttons
-        // don't claim, so on short screens the content scrolls instead of
-        // clipping the Refresh / Stop buttons.
+        // Scrollable top section. Bottom action buttons stay pinned.
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -60,148 +65,172 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            HomeTopBar(user = user, onOpenProfile = onOpenProfile)
-            GreetingBlock(user = user)
-            StatusCard(isRunning = isRunning)
+            TopBar(user = user, onOpenProfile = onOpenProfile)
+            StatusPill(
+                text = if (isRunning) "Cibo is running" else "Cibo is paused",
+                tone = if (isRunning) StatusTone.Positive else StatusTone.Neutral,
+                pulses = isRunning,
+            )
+            GreetingBlock(user = user, summary = summary)
+            DailyRingCard(user = user, summary = summary)
             if (onAllowUnrestrictedBattery != null) {
                 BatteryTipCard(onAllow = onAllowUnrestrictedBattery)
             }
+            HowItWorksHint(isRunning = isRunning)
+            InsightCard(text = insightText(user))
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Primary: Refresh / Start. Always available.
-        Button(
+        CiboPrimaryButton(
+            text = if (isRunning) "Refresh Cibo" else "Start Cibo",
             onClick = onRefreshBubble,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            Text(
-                if (isRunning) "Refresh Cibo" else "Start Cibo",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
+        )
 
-        // Secondary: Stop. Only shown when actually running.
         if (isRunning) {
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onStopBubble,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp),
-                shape = RoundedCornerShape(14.dp),
-            ) {
-                Text("Stop Cibo")
-            }
+            CiboSecondaryButton(text = "Stop Cibo", onClick = onStopBubble)
         }
     }
 }
 
+// ──────────────── pieces
+
 @Composable
-private fun HomeTopBar(user: UserProfile?, onOpenProfile: () -> Unit) {
+private fun TopBar(user: UserProfile?, onOpenProfile: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            "Cibo",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.weight(1f),
-        )
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.cibo_logo),
+                contentDescription = null,
+                modifier = Modifier.size(28.dp),
+            )
+            Text(
+                "Cibo",
+                style = CiboType.DisplaySm,
+                color = CiboColors.Primary,
+            )
+        }
+        Box(
+            Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(CiboColors.SurfaceContainerHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.Notifications,
+                contentDescription = "Notifications",
+                tint = CiboColors.OnSurface,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Spacer(Modifier.width(8.dp))
         ProfileAvatarButton(user = user, onClick = onOpenProfile)
     }
 }
 
 @Composable
 private fun ProfileAvatarButton(user: UserProfile?, onClick: () -> Unit) {
+    val initials = (user?.name ?: user?.email ?: "+").let { name ->
+        val parts = name.split(" ", limit = 2)
+        if (parts.size >= 2 && parts[0].isNotEmpty() && parts[1].isNotEmpty()) {
+            "${parts[0].first()}${parts[1].first()}".uppercase()
+        } else {
+            name.take(2).uppercase()
+        }
+    }
     Box(
         modifier = Modifier
-            .size(42.dp)
+            .size(38.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary)
+            .background(CiboColors.SurfaceContainerHigh)
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
-        val ch = user?.name?.firstOrNull() ?: user?.email?.firstOrNull() ?: '+'
         Text(
-            ch.uppercaseChar().toString(),
-            color = MaterialTheme.colorScheme.onPrimary,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            initials,
+            color = CiboColors.OnSurface,
+            style = CiboType.BodyMd.copy(fontSize = androidx.compose.ui.unit.TextUnit(13f, androidx.compose.ui.unit.TextUnitType.Sp)),
         )
     }
 }
 
 @Composable
-private fun GreetingBlock(user: UserProfile?) {
+private fun GreetingBlock(user: UserProfile?, summary: DailySummary?) {
     val hour = LocalTime.now().hour
     val timeGreeting = when {
-        hour < 12 -> "Good morning"
-        hour < 17 -> "Good afternoon"
-        else -> "Good evening"
+        hour < 12 -> "morning"
+        hour < 17 -> "afternoon"
+        else -> "evening"
     }
-    val displayName = user?.name?.takeIf { it.isNotBlank() }?.trim()?.split(" ")?.firstOrNull()
+    val displayName = user?.name?.takeIf { it.isNotBlank() }
+        ?.split(" ")?.firstOrNull()
         ?: user?.email?.substringBefore("@")?.replaceFirstChar { it.uppercaseChar() }
+        ?: "there"
 
-    val headline = if (displayName != null) "$timeGreeting, $displayName" else timeGreeting
-    val sub = if (user != null) {
-        "Goal: ${user.dailyKcalTarget} kcal today · tap your initial to edit"
-    } else {
-        "Sign in to track your daily calorie goal — tap the avatar above."
+    val sub = when {
+        user == null -> "Sign in to track your daily calorie goal."
+        summary != null ->
+            "You've used ${summary.consumedKcal} of ${summary.dailyKcalTarget} kcal today."
+        else -> "Goal: ${user.dailyKcalTarget} kcal today."
     }
-    Column {
-        Text(
-            headline,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            sub,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-        )
+
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text("Good $timeGreeting,",
+            style = CiboType.DisplayMd,
+            color = CiboColors.OnSurface)
+        Text(displayName.replaceFirstChar { it.uppercaseChar() },
+            style = CiboType.DisplayMd,
+            color = CiboColors.OnSurface)
+        Spacer(Modifier.height(6.dp))
+        Text(sub, style = CiboType.BodyMd, color = CiboColors.OnSurfaceVariant)
     }
 }
 
 @Composable
-private fun StatusCard(isRunning: Boolean) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(if (isRunning) Color(0xFF34D399) else Color(0xFF8B95A2)),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    if (isRunning) "Cibo is running" else "Cibo is paused",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
+private fun DailyRingCard(user: UserProfile?, summary: DailySummary?) {
+    val consumed = summary?.consumedKcal ?: 0
+    val target = summary?.dailyKcalTarget ?: user?.dailyKcalTarget ?: 0
+    GlassCard {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            KcalRing(consumed = consumed, target = target)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                MacroBar(label = "Protein",
+                    grams = summary?.consumedProteinG ?: 0,
+                    modifier = Modifier.weight(1f))
+                MacroBar(label = "Fats",
+                    grams = summary?.consumedFatG ?: 0,
+                    target = 80,
+                    modifier = Modifier.weight(1f))
+                MacroBar(label = "Carbs",
+                    grams = summary?.consumedCarbsG ?: 0,
+                    target = 250,
+                    modifier = Modifier.weight(1f))
             }
-            Spacer(Modifier.height(6.dp))
             Text(
-                if (isRunning) {
-                    "Cibo appears automatically when you open Swiggy / Zomato / " +
-                        "Domino's etc., and stays hidden everywhere else. If it " +
-                        "doesn't appear after the phone has been idle, tap Refresh below."
-                } else {
-                    "Cibo isn't running. Tap Start to bring it back."
+                when {
+                    user == null -> "Sign in to start tracking calories."
+                    summary == null -> "Open the Plate tab or scan a cart to log today's meals."
+                    summary.logCount == 0 -> "Nothing logged yet today — snap a meal or scan a cart."
+                    else -> "${summary.remainingKcal} kcal left for the day."
                 },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                style = CiboType.BodyMd,
+                color = CiboColors.OnSurfaceVariant,
             )
         }
     }
@@ -209,28 +238,53 @@ private fun StatusCard(isRunning: Boolean) {
 
 @Composable
 private fun BatteryTipCard(onAllow: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
-        ),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                "Cibo not showing on Swiggy / Zomato?",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Your phone's battery saver may be stopping Cibo in the background. Allow Cibo to run unrestricted, then reopen Swiggy.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-            )
-            TextButton(onClick = onAllow) {
-                Text("Allow Cibo to run in background")
+    GlassCard(glow = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatusPill(text = "Tip", tone = StatusTone.Warning)
             }
+            Text(
+                "Cibo not appearing on Swiggy / Zomato?",
+                style = CiboType.H2,
+                color = CiboColors.OnSurface,
+            )
+            Text(
+                "Battery saver may be killing Cibo in the background. Allow Cibo to run unrestricted, then reopen the food app.",
+                style = CiboType.BodyMd,
+                color = CiboColors.OnSurfaceVariant,
+            )
+            CiboSecondaryButton(text = "Allow background", onClick = onAllow)
         }
     }
+}
+
+@Composable
+private fun HowItWorksHint(isRunning: Boolean) {
+    GlassCard(contentPadding = PaddingValues(20.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                if (isRunning) "How Cibo helps" else "What you'll see",
+                style = CiboType.H2,
+                color = CiboColors.OnSurface,
+            )
+            Text(
+                if (isRunning) {
+                    "Cibo appears automatically when you open Swiggy, Zomato, Domino's or Blinkit. Tap it to score the cart you're looking at."
+                } else {
+                    "Once you start, a small Cibo button rides on top of food-delivery apps. Tap it to see kcal, score, and a smarter swap."
+                },
+                style = CiboType.BodyMd,
+                color = CiboColors.OnSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun insightText(user: UserProfile?): String = if (user == null) {
+    "Sign in and Cibo will tailor every cart verdict to your daily goal — not just generic kcal numbers."
+} else {
+    "Tip: take the swap when offered — most people save 200–400 kcal per order without losing the meal they wanted."
 }

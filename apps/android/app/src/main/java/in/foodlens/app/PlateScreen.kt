@@ -50,6 +50,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,6 +83,11 @@ import `in`.foodlens.app.network.MatchedItem
 import `in`.foodlens.app.network.MealLogPublic
 import `in`.foodlens.app.network.MealLogRequest
 import `in`.foodlens.app.network.PlateAnalyzeResponse
+import `in`.foodlens.app.ui.CiboColors
+import `in`.foodlens.app.ui.CiboType
+import `in`.foodlens.app.ui.InsightCard
+import `in`.foodlens.app.ui.VerdictSignal
+import `in`.foodlens.app.ui.VerdictBanner as CiboVerdictBanner
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.LocalDateTime
@@ -100,7 +106,7 @@ import kotlinx.coroutines.withContext
  *  Idle      → user is browsing / two-button surface + today's log
  *  Analyzing → JPEG uploaded, waiting for Gemini, preview visible
  *  Result    → response received, render verdict + actions + image preview
- *  Logged    → user tapped "Add to log"; brief success splash, auto-reset
+ *  Logged    → user tapped "Add to my day"; brief success splash, auto-reset
  *  Error     → recoverable failure (network / Gemini 503 / no food in image)
  */
 private sealed interface PlateUiState {
@@ -125,16 +131,19 @@ fun PlateScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val app = context.foodLensApp
 
-    var summary by remember { mutableStateOf<DailySummary?>(null) }
+    // Single source of truth for today — shared with HomeScreen and the
+    // overlay's order-confirmed callback.
+    val summary by app.dailySummary.collectAsState()
+    val mealLogs by app.todayMealLogs.collectAsState()
     var summaryLoading by remember { mutableStateOf(true) }
-    var mealLogs by remember { mutableStateOf<List<MealLogPublic>>(emptyList()) }
     var state by remember { mutableStateOf<PlateUiState>(PlateUiState.Idle) }
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
 
     suspend fun refreshDaily() {
-        runCatching { analyzer.getTodaySummary(idToken) }.onSuccess { summary = it }
-        runCatching { analyzer.getTodayMealLogs(idToken) }.onSuccess { mealLogs = it }
+        runCatching { analyzer.getTodaySummary(idToken) }.onSuccess { app.setSummary(it) }
+        runCatching { analyzer.getTodayMealLogs(idToken) }.onSuccess { app.setMealLogs(it) }
     }
 
     LaunchedEffect(idToken) {
@@ -150,7 +159,7 @@ fun PlateScreen(
                 val jpeg = readUriAsJpeg(context, uri)
                 val response = analyzer.analyzePlate(idToken, jpeg)
                 state = PlateUiState.Result(response, uri)
-                response.dailySummary?.let { summary = it }
+                response.dailySummary?.let { app.setSummary(it) }
             } catch (t: Throwable) {
                 state = PlateUiState.Error(t.message ?: "Couldn't analyse this photo")
             }
@@ -239,10 +248,10 @@ fun PlateScreen(
                                 ),
                             )
                         }.onSuccess { updated ->
-                            summary = updated
+                            app.setSummary(updated)
                             // Refresh the today list too so it shows up in Idle.
                             runCatching { analyzer.getTodayMealLogs(idToken) }
-                                .onSuccess { mealLogs = it }
+                                .onSuccess { app.setMealLogs(it) }
                             state = PlateUiState.Logged(updated)
                         }.onFailure {
                             state = PlateUiState.Error(it.message ?: "Couldn't log this meal")
@@ -530,7 +539,7 @@ private fun ResultSurface(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
-                    Text("Add to log", fontWeight = FontWeight.SemiBold)
+                    Text("Add to my day", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -560,7 +569,7 @@ private fun LoggedSurface(summary: DailySummary, onDone: () -> Unit) {
             Text("✓", fontSize = 56.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
         Spacer(Modifier.height(24.dp))
-        Text("Logged!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("Added to your day", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
         Text(
             "${summary.remainingKcal} kcal left for today.",
@@ -606,7 +615,7 @@ private fun VerdictBanner(verdict: CoachVerdict) {
     LaunchedEffect(verdict) { entered = true }
 
     val scale by animateFloatAsState(
-        targetValue = if (entered) 1f else 0.88f,
+        targetValue = if (entered) 1f else 0.92f,
         animationSpec = spring(
             stiffness = Spring.StiffnessMediumLow,
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -619,29 +628,27 @@ private fun VerdictBanner(verdict: CoachVerdict) {
         label = "verdict-alpha",
     )
 
-    val (bg, fg) = when (verdict.signal.lowercase()) {
-        "green" -> Color(0xFF34D399) to Color(0xFF0F1722)
-        "yellow" -> Color(0xFFFBBF24) to Color(0xFF0F1722)
-        "red" -> Color(0xFFEF4444) to Color.White
-        else -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+    val signal = when (verdict.signal.lowercase()) {
+        "green"  -> VerdictSignal.Green
+        "red"    -> VerdictSignal.Red
+        else     -> VerdictSignal.Yellow
     }
-    Card(
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = bg),
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                this.alpha = alpha
-            },
+    val headline = when (signal) {
+        VerdictSignal.Green  -> "Go for it"
+        VerdictSignal.Yellow -> "Fair choice"
+        VerdictSignal.Red    -> "Heads up"
+    }
+    Box(
+        Modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+            this.alpha = alpha
+        },
     ) {
-        Text(
-            verdict.oneLiner,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-            style = MaterialTheme.typography.titleMedium,
-            color = fg,
-            fontWeight = FontWeight.SemiBold,
+        CiboVerdictBanner(
+            signal = signal,
+            headline = headline,
+            detail = verdict.oneLiner,
         )
     }
 }

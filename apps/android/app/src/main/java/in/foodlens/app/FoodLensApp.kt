@@ -6,6 +6,8 @@ import android.util.Log
 import `in`.foodlens.app.auth.AuthState
 import `in`.foodlens.app.network.AnalyzeClient
 import `in`.foodlens.app.network.AnalyzeResponse
+import `in`.foodlens.app.network.DailySummary
+import `in`.foodlens.app.network.MealLogPublic
 import `in`.foodlens.app.network.MealLogRequest
 import `in`.foodlens.app.overlay.OverlayBubbleManager
 import kotlinx.coroutines.CoroutineScope
@@ -50,12 +52,35 @@ class FoodLensApp : Application() {
         _floatingButtonRunning.value = running
     }
 
+    /**
+     * App-wide today snapshot. Owned here so Home and Plate (and the
+     * overlay's order-confirmed callback) all read from the same source —
+     * no more "added a meal but the kcal ring is still 0".
+     */
+    private val _dailySummary = MutableStateFlow<DailySummary?>(null)
+    val dailySummary: StateFlow<DailySummary?> = _dailySummary.asStateFlow()
+
+    private val _todayMealLogs = MutableStateFlow<List<MealLogPublic>>(emptyList())
+    val todayMealLogs: StateFlow<List<MealLogPublic>> = _todayMealLogs.asStateFlow()
+
+    fun setSummary(summary: DailySummary) { _dailySummary.value = summary }
+    fun setMealLogs(logs: List<MealLogPublic>) { _todayMealLogs.value = logs }
+
+    /** Refresh both the daily summary and today's meal logs in parallel. */
+    fun refreshToday() {
+        val token = authState.idToken ?: return
+        appScope.launch {
+            runCatching { analyzer.getTodaySummary(token) }.onSuccess { _dailySummary.value = it }
+            runCatching { analyzer.getTodayMealLogs(token) }.onSuccess { _todayMealLogs.value = it }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         bubbleManager.onConfirmOrder = ::confirmOrder
     }
 
-    /** Wired from [OverlayBubbleManager] when the user taps "Yes, ordering" on the result card. */
+    /** Wired from [OverlayBubbleManager] when the user taps "Add to my day" on the result card. */
     private fun confirmOrder(response: AnalyzeResponse) {
         val token = authState.idToken
         if (token == null) {
@@ -72,6 +97,9 @@ class FoodLensApp : Application() {
                         healthScore = response.healthScore,
                     ),
                 )
+                _dailySummary.value = summary
+                runCatching { analyzer.getTodayMealLogs(token) }
+                    .onSuccess { _todayMealLogs.value = it }
                 bubbleManager.showOrderConfirmed(summary)
             } catch (t: Throwable) {
                 Log.e(TAG, "log meal failed", t)
