@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import `in`.foodlens.app.auth.UserProfile
 import `in`.foodlens.app.network.DailySummary
+import `in`.foodlens.app.ui.CiboAvatar
 import `in`.foodlens.app.ui.CiboColors
 import `in`.foodlens.app.ui.CiboPrimaryButton
 import `in`.foodlens.app.ui.CiboSecondaryButton
@@ -82,14 +83,24 @@ fun HomeScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        CiboPrimaryButton(
-            text = if (isRunning) "Refresh Cibo" else "Start Cibo",
-            onClick = onRefreshBubble,
-        )
-
-        if (isRunning) {
+        // Signed-out users get one obvious CTA — Sign in. Discoverability
+        // of the avatar in the corner was the #1 user complaint.
+        if (user == null) {
+            CiboPrimaryButton(text = "Sign in to Cibo", onClick = onOpenProfile)
             Spacer(Modifier.height(8.dp))
-            CiboSecondaryButton(text = "Stop Cibo", onClick = onStopBubble)
+            CiboSecondaryButton(
+                text = if (isRunning) "Refresh Cibo" else "Start Cibo",
+                onClick = onRefreshBubble,
+            )
+        } else {
+            CiboPrimaryButton(
+                text = if (isRunning) "Refresh Cibo" else "Start Cibo",
+                onClick = onRefreshBubble,
+            )
+            if (isRunning) {
+                Spacer(Modifier.height(8.dp))
+                CiboSecondaryButton(text = "Stop Cibo", onClick = onStopBubble)
+            }
         }
     }
 }
@@ -139,28 +150,7 @@ private fun TopBar(user: UserProfile?, onOpenProfile: () -> Unit) {
 
 @Composable
 private fun ProfileAvatarButton(user: UserProfile?, onClick: () -> Unit) {
-    val initials = (user?.name ?: user?.email ?: "+").let { name ->
-        val parts = name.split(" ", limit = 2)
-        if (parts.size >= 2 && parts[0].isNotEmpty() && parts[1].isNotEmpty()) {
-            "${parts[0].first()}${parts[1].first()}".uppercase()
-        } else {
-            name.take(2).uppercase()
-        }
-    }
-    Box(
-        modifier = Modifier
-            .size(38.dp)
-            .clip(CircleShape)
-            .background(CiboColors.SurfaceContainerHigh)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            initials,
-            color = CiboColors.OnSurface,
-            style = CiboType.BodyMd.copy(fontSize = androidx.compose.ui.unit.TextUnit(13f, androidx.compose.ui.unit.TextUnitType.Sp)),
-        )
-    }
+    CiboAvatar(user = user, size = 38.dp, onClick = onClick)
 }
 
 @Composable

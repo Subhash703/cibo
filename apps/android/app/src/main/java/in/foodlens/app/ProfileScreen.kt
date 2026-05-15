@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -44,12 +45,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,8 +66,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import `in`.foodlens.app.auth.ACTIVITY_LEVELS
+import `in`.foodlens.app.auth.GOALS
 import `in`.foodlens.app.auth.UserProfile
 import `in`.foodlens.app.auth.computeSuggestedKcal
+import `in`.foodlens.app.ui.CiboAvatar
 import `in`.foodlens.app.ui.CiboColors
 import `in`.foodlens.app.ui.CiboPrimaryButton
 import `in`.foodlens.app.ui.CiboSecondaryButton
@@ -72,6 +78,12 @@ import `in`.foodlens.app.ui.GlassCard
 import `in`.foodlens.app.ui.InsightCard
 import `in`.foodlens.app.ui.StatusPill
 import `in`.foodlens.app.ui.StatusTone
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.filled.Edit
 
 data class ProfileUiState(
     val user: UserProfile?,
@@ -86,8 +98,22 @@ fun ProfileScreen(
     onAuthSubmit: (email: String, password: String, isRegister: Boolean, name: String?) -> Unit,
     onSignOut: () -> Unit,
     onSaveProfile: (UserProfile) -> Unit,
+    onUploadAvatar: (Uri) -> Unit,
     onBack: () -> Unit,
 ) {
+    val scrollState = rememberScrollState()
+    val wasBusy = remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Scroll back to the top after a successful save so the user sees
+    // their updated header instead of the (now-irrelevant) save button.
+    LaunchedEffect(state.busy, state.error) {
+        if (wasBusy.value && !state.busy && state.error == null) {
+            coroutineScope.launch { scrollState.animateScrollTo(0) }
+        }
+        wasBusy.value = state.busy
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -119,7 +145,8 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp, vertical = 8.dp),
         ) {
             if (state.user == null) {
@@ -134,6 +161,7 @@ fun ProfileScreen(
                     busy = state.busy,
                     error = state.error,
                     onSaveProfile = onSaveProfile,
+                    onUploadAvatar = onUploadAvatar,
                     onSignOut = onSignOut,
                 )
             }
@@ -272,6 +300,7 @@ private fun SignedInBody(
     busy: Boolean,
     error: String?,
     onSaveProfile: (UserProfile) -> Unit,
+    onUploadAvatar: (Uri) -> Unit,
     onSignOut: () -> Unit,
 ) {
     var goal by remember(user.dailyKcalTarget) { mutableIntStateOf(user.dailyKcalTarget) }
@@ -280,6 +309,7 @@ private fun SignedInBody(
     var weightKg by remember(user.weightKg) { mutableStateOf(user.weightKg) }
     var heightCm by remember(user.heightCm) { mutableStateOf(user.heightCm) }
     var activityLevel by remember(user.activityLevel) { mutableStateOf(user.activityLevel) }
+    var userGoal by remember(user.goal) { mutableStateOf(user.goal) }
 
     val suggestion = computeSuggestedKcal(sex, weightKg, heightCm, birthYear, activityLevel)
     val updated = user.copy(
@@ -289,23 +319,52 @@ private fun SignedInBody(
         weightKg = weightKg,
         heightCm = heightCm,
         activityLevel = activityLevel,
+        goal = userGoal,
     )
     val dirty = updated != user
 
+    val avatarPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri -> if (uri != null) onUploadAvatar(uri) }
+
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Avatar(name = user.name, email = user.email, size = 56.dp)
+            Box {
+                CiboAvatar(user = user, size = 64.dp, stroked = true)
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .offset(x = 44.dp, y = 44.dp)
+                        .clip(CircleShape)
+                        .background(CiboColors.Primary)
+                        .clickable {
+                            avatarPicker.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly,
+                                ),
+                            )
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Change photo",
+                        tint = CiboColors.OnPrimary,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
             Spacer(Modifier.width(16.dp))
             Column {
                 Text(
                     user.name ?: user.email,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = CiboType.H1,
+                    color = CiboColors.OnSurface,
                 )
                 Text(
                     user.email,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    style = CiboType.BodyMd,
+                    color = CiboColors.OnSurfaceVariant,
                 )
             }
         }
@@ -314,6 +373,7 @@ private fun SignedInBody(
             goal = goal,
             onGoalChange = { goal = it },
             suggestion = suggestion,
+            insight = user.goalInsight,
         )
 
         PersonaliseGoalCard(
@@ -327,6 +387,8 @@ private fun SignedInBody(
             onHeightChange = { heightCm = it },
             activityLevel = activityLevel,
             onActivityChange = { activityLevel = it },
+            userGoal = userGoal,
+            onGoalChange = { userGoal = it },
             suggestion = suggestion,
         )
 
@@ -361,6 +423,7 @@ private fun GoalSliderCard(
     goal: Int,
     onGoalChange: (Int) -> Unit,
     suggestion: Int?,
+    insight: String?,
 ) {
     GlassCard {
         Column {
@@ -431,7 +494,8 @@ private fun GoalSliderCard(
             Spacer(Modifier.height(16.dp))
             InsightCard(
                 label = "AI INSIGHT",
-                text = "This goal is optimized for consistent energy and metabolic health based on your activity levels.",
+                text = insight
+                    ?: "Pick a goal in Personalize — Cibo will tailor a daily insight to you. Until then, this slider is your TDEE estimate.",
             )
         }
     }
@@ -450,11 +514,13 @@ private fun PersonaliseGoalCard(
     onHeightChange: (Float?) -> Unit,
     activityLevel: String?,
     onActivityChange: (String) -> Unit,
+    userGoal: String?,
+    onGoalChange: (String) -> Unit,
     suggestion: Int?,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val anyFilled = sex != null || birthYear != null || weightKg != null ||
-        heightCm != null || activityLevel != null
+        heightCm != null || activityLevel != null || userGoal != null
 
     GlassCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
         Column {
@@ -578,6 +644,28 @@ private fun PersonaliseGoalCard(
                                 FilterChip(
                                     selected = activityLevel == value,
                                     onClick = { onActivityChange(value) },
+                                    label = { Text(label) },
+                                )
+                            }
+                        }
+                    }
+
+                    // Goal
+                    Column {
+                        Text(
+                            "Your goal",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            GOALS.forEach { (value, label) ->
+                                FilterChip(
+                                    selected = userGoal == value,
+                                    onClick = { onGoalChange(value) },
                                     label = { Text(label) },
                                 )
                             }

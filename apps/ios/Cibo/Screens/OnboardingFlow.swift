@@ -36,6 +36,15 @@ struct OnboardingFlow: View {
         }
         .toolbar {
             if page > 0 {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { page -= 1 }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(CiboColor.onSurface)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Skip") {
                         onboarded = true

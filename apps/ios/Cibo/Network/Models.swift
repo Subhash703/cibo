@@ -61,7 +61,7 @@ struct PlateAnalyzeResponse: Codable {
 struct UserPublic: Codable, Hashable {
     var email: String
     var name: String?
-    var picture: String?
+    var picture: String?    // either a full URL or a server-relative path "/avatars/{id}?v=..."
     var dailyKcalTarget: Int = 2000
     var birthYear: Int?
     var sex: String?
@@ -69,6 +69,13 @@ struct UserPublic: Codable, Hashable {
     var heightCm: Double?
     var activityLevel: String?
     var suggestedKcalTarget: Int?
+    var goal: String?           // "lose_weight" | "build_muscle" | …
+    var goalInsight: String?    // AI-generated, regenerated on profile change
+    // Optional in the wire model: older backends omit `has_avatar` and
+    // Swift Codable doesn't honour Swift property defaults when a key is
+    // missing — it raises keyNotFound. `picture` is the actual signal we
+    // use in CiboAvatar; this flag is bookkeeping only.
+    var hasAvatar: Bool? = nil
 }
 
 struct AuthResponse: Codable {
@@ -83,7 +90,18 @@ struct ProfileUpdate: Codable {
     var weightKg: Double?
     var heightCm: Double?
     var activityLevel: String?
+    var goal: String?
 }
+
+/// User-facing labels for the goal picker. Wire string is the dict key.
+let CiboGoals: [(id: String, label: String)] = [
+    ("lose_weight",      "Lose weight"),
+    ("build_muscle",     "Build muscle"),
+    ("stay_healthy",     "Stay healthy"),
+    ("improve_energy",   "Improve energy"),
+    ("manage_diabetes",  "Manage diabetes"),
+    ("general_wellness", "General wellness"),
+]
 
 struct MealLogRequest: Codable {
     var macros: Macro

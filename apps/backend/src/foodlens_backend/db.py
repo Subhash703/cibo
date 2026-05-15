@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from .models import Base
@@ -51,6 +51,27 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    _apply_lightweight_migrations()
+
+
+# Idempotent ALTER TABLE statements for columns added after the first
+# release. SQLAlchemy's create_all only adds *missing tables*, never
+# missing columns. Postgres' ADD COLUMN IF NOT EXISTS makes this safe to
+# run on every boot. Drop these lines once we adopt Alembic.
+_LIGHTWEIGHT_MIGRATIONS = (
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS goal VARCHAR(32)",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS goal_insight TEXT",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS goal_insight_at TIMESTAMP",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_bytes BYTEA",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_content_type VARCHAR(32)",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_updated_at TIMESTAMP",
+)
+
+
+def _apply_lightweight_migrations() -> None:
+    with engine.begin() as conn:
+        for stmt in _LIGHTWEIGHT_MIGRATIONS:
+            conn.execute(text(stmt))
 
 
 def get_db() -> Generator[Session, None, None]:

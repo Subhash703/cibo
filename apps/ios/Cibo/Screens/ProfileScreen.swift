@@ -1,10 +1,12 @@
 import SwiftUI
+import PhotosUI
 
 struct ProfileScreen: View {
     @EnvironmentObject private var auth: AuthStore
     @State private var goal: Double = 2000
     @State private var personalizeOpen = false
     @State private var showEditSheet = false
+    @State private var avatarPickerItem: PhotosPickerItem?
 
     var body: some View {
         ZStack {
@@ -28,6 +30,18 @@ struct ProfileScreen: View {
         .navigationBarHidden(true)
         .onAppear { goal = Double(auth.user?.dailyKcalTarget ?? 2000) }
         .sheet(isPresented: $showEditSheet) { ProfileEditSheet() }
+        .onChange(of: avatarPickerItem) { _, item in
+            guard let item else { return }
+            Task { await loadAvatar(item) }
+        }
+    }
+
+    private func loadAvatar(_ item: PhotosPickerItem) async {
+        defer { avatarPickerItem = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let img = UIImage(data: data),
+              let jpeg = img.jpegData(compressionQuality: 0.85) else { return }
+        await auth.uploadAvatar(jpeg: jpeg)
     }
 
     private var headerCard: some View {
@@ -43,13 +57,16 @@ struct ProfileScreen: View {
                     .padding(10)
                     .background(Circle().fill(CiboColor.surfaceContainerHigh))
             }
-            ZStack {
-                Circle()
-                    .stroke(CiboColor.primary, lineWidth: 3)
-                    .frame(width: 110, height: 110)
-                Image(systemName: "person.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(CiboColor.primary)
+            ZStack(alignment: .bottomTrailing) {
+                CiboAvatar(user: auth.user, size: 110, stroked: true)
+                PhotosPicker(selection: $avatarPickerItem, matching: .images) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(CiboColor.onPrimary)
+                        .padding(8)
+                        .background(Circle().fill(CiboColor.primary))
+                        .overlay(Circle().strokeBorder(CiboColor.background, lineWidth: 3))
+                }
             }
             Text(auth.user?.name ?? auth.user?.email ?? "—")
                 .font(CiboFont.display(26, weight: .semibold))
@@ -89,8 +106,11 @@ struct ProfileScreen: View {
                     Spacer()
                     Text("3,500").font(CiboFont.labelSm).foregroundStyle(CiboColor.onSurfaceVariant)
                 }
-                InsightCard(label: "AI INSIGHT",
-                            text: "This goal is optimized for consistent energy and metabolic health based on your activity levels.")
+                InsightCard(
+                    label: "AI INSIGHT",
+                    text: auth.user?.goalInsight
+                        ?? "Pick a goal in Edit Info — Cibo will tailor a daily insight to you. Until then, this slider is your TDEE estimate."
+                )
             }
         }
     }

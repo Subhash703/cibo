@@ -64,6 +64,7 @@ struct SignInScreen: View {
                 .screenPadding()
                 .padding(.top, CiboSpacing.xl)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .task {
             // Belt-and-braces wake — by the time the user types credentials,

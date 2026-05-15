@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 data class UserProfile(
     val email: String,
     val name: String? = null,
-    val picture: String? = null,
+    val picture: String? = null,        // either full URL or "/avatars/{id}?v=..."
     val dailyKcalTarget: Int = 2000,
     val birthYear: Int? = null,
     val sex: String? = null,            // "male" / "female" / "other"
@@ -23,6 +23,19 @@ data class UserProfile(
     val heightCm: Float? = null,
     val activityLevel: String? = null,  // see ACTIVITY_LEVELS
     val suggestedKcalTarget: Int? = null,
+    val goal: String? = null,           // see GOALS
+    val goalInsight: String? = null,    // AI-generated, surfaced on the Goal card
+    val hasAvatar: Boolean = false,
+)
+
+/** Display-friendly options for the goal picker. Wire string is `first`. */
+val GOALS: List<Pair<String, String>> = listOf(
+    "lose_weight" to "Lose weight",
+    "build_muscle" to "Build muscle",
+    "stay_healthy" to "Stay healthy",
+    "improve_energy" to "Improve energy",
+    "manage_diabetes" to "Manage diabetes",
+    "general_wellness" to "General wellness",
 )
 
 /** Display-friendly options for the activity selector. */

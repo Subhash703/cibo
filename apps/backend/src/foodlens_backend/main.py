@@ -1,12 +1,13 @@
 import json as json_lib
 import logging
 from contextlib import asynccontextmanager
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from google.genai import errors as genai_errors
 from sqlalchemy.orm import Session
 
@@ -29,6 +30,7 @@ from .auth import (
     verify_password,
 )
 from .db import get_db, init_db
+from .insights import VALID_GOALS, generate_goal_insight
 from .models import MealLog, User
 from .schemas import (
     AnalyzeRequest,
@@ -50,10 +52,18 @@ from .vision import analyze_plate_with_vision, analyze_with_vision
 
 def _to_user_public(user: User) -> UserPublic:
     """Builds a UserPublic from a User row, including the computed TDEE."""
+    # If the user has uploaded an avatar, point `picture` at our public
+    # avatar endpoint with a cache-busting `?v=` so clients re-fetch when
+    # they change their photo. The path is relative — clients prepend
+    # their configured API base URL.
+    picture: str | None = user.picture
+    if user.avatar_bytes is not None:
+        ts = int(user.avatar_updated_at.timestamp()) if user.avatar_updated_at else 0
+        picture = f"/avatars/{user.id}?v={ts}"
     return UserPublic(
         email=user.email,
         name=user.name,
-        picture=user.picture,
+        picture=picture,
         daily_kcal_target=user.daily_kcal_target,
         birth_year=user.birth_year,
         sex=user.sex,
@@ -61,7 +71,37 @@ def _to_user_public(user: User) -> UserPublic:
         height_cm=user.height_cm,
         activity_level=user.activity_level,
         suggested_kcal_target=compute_tdee(user),
+        goal=user.goal,
+        goal_insight=user.goal_insight,
+        has_avatar=user.avatar_bytes is not None,
     )
+
+
+# Profile fields that, when changed, should trigger a fresh AI insight.
+_INSIGHT_TRIGGER_FIELDS = (
+    "goal", "daily_kcal_target", "weight_kg", "height_cm",
+    "birth_year", "sex", "activity_level",
+)
+
+
+async def _maybe_refresh_insight(
+    user: User,
+    db: Session,
+    changed: set[str],
+) -> None:
+    """If a profile change touched anything that affects the AI insight,
+    regenerate it. Skips silently when Gemini is unavailable — the cached
+    text (or None) stays put."""
+    if not user.goal:
+        return
+    if not (changed & set(_INSIGHT_TRIGGER_FIELDS)):
+        return
+    text = await generate_goal_insight(user)
+    if text:
+        user.goal_insight = text
+        user.goal_insight_at = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
 
 
 @asynccontextmanager
@@ -257,15 +297,18 @@ def get_me(user: User = Depends(current_user)) -> UserPublic:
 
 
 @app.patch("/me", response_model=UserPublic)
-def update_me(
+async def update_me(
     req: ProfileUpdate,
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ) -> UserPublic:
-    if req.daily_kcal_target is not None:
+    changed: set[str] = set()
+    if req.daily_kcal_target is not None and req.daily_kcal_target != user.daily_kcal_target:
         user.daily_kcal_target = req.daily_kcal_target
-    if req.birth_year is not None:
+        changed.add("daily_kcal_target")
+    if req.birth_year is not None and req.birth_year != user.birth_year:
         user.birth_year = req.birth_year
+        changed.add("birth_year")
     if req.sex is not None:
         sex = req.sex.strip().lower()
         if sex not in VALID_SEXES:
@@ -273,11 +316,15 @@ def update_me(
                 status_code=422,
                 detail=f"sex must be one of {sorted(VALID_SEXES)}",
             )
-        user.sex = sex
-    if req.weight_kg is not None:
+        if sex != user.sex:
+            user.sex = sex
+            changed.add("sex")
+    if req.weight_kg is not None and req.weight_kg != user.weight_kg:
         user.weight_kg = req.weight_kg
-    if req.height_cm is not None:
+        changed.add("weight_kg")
+    if req.height_cm is not None and req.height_cm != user.height_cm:
         user.height_cm = req.height_cm
+        changed.add("height_cm")
     if req.activity_level is not None:
         level = req.activity_level.strip().lower()
         if level not in VALID_ACTIVITY_LEVELS:
@@ -285,10 +332,83 @@ def update_me(
                 status_code=422,
                 detail=f"activity_level must be one of {sorted(VALID_ACTIVITY_LEVELS)}",
             )
-        user.activity_level = level
+        if level != user.activity_level:
+            user.activity_level = level
+            changed.add("activity_level")
+    if req.goal is not None:
+        goal = req.goal.strip().lower()
+        if goal not in VALID_GOALS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"goal must be one of {sorted(VALID_GOALS)}",
+            )
+        if goal != user.goal:
+            user.goal = goal
+            changed.add("goal")
+    db.commit()
+    db.refresh(user)
+    await _maybe_refresh_insight(user, db, changed)
+    return _to_user_public(user)
+
+
+# --- Avatar -----------------------------------------------------------------
+
+_MAX_AVATAR_BYTES = 2 * 1024 * 1024  # 2 MB — plenty for a square JPEG.
+
+
+@app.post("/me/avatar", response_model=UserPublic)
+async def upload_avatar(
+    image: UploadFile = File(...),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> UserPublic:
+    """Upload a profile photo. Bytes are stored on the user row and served
+    publicly from GET /avatars/{user_id}."""
+    data = await image.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty image upload.")
+    if len(data) > _MAX_AVATAR_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Image too large ({len(data)} bytes). Max {_MAX_AVATAR_BYTES}.",
+        )
+    user.avatar_bytes = data
+    user.avatar_content_type = image.content_type or "image/jpeg"
+    user.avatar_updated_at = datetime.utcnow()
     db.commit()
     db.refresh(user)
     return _to_user_public(user)
+
+
+@app.delete("/me/avatar", response_model=UserPublic)
+def delete_avatar(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> UserPublic:
+    user.avatar_bytes = None
+    user.avatar_content_type = None
+    user.avatar_updated_at = None
+    db.commit()
+    db.refresh(user)
+    return _to_user_public(user)
+
+
+@app.get("/avatars/{user_id}")
+def get_avatar(
+    user_id: int,
+    db: Session = Depends(get_db),
+) -> Response:
+    """Public — returns the user's uploaded avatar bytes. Avatars are
+    expected to be cacheable; clients add a `?v=updated_at` query param
+    to bust the cache when the user changes their photo."""
+    user = db.query(User).filter_by(id=user_id).first()
+    if user is None or user.avatar_bytes is None:
+        raise HTTPException(status_code=404, detail="No avatar.")
+    return Response(
+        content=user.avatar_bytes,
+        media_type=user.avatar_content_type or "image/jpeg",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
 
 
 # --- Meal logging -----------------------------------------------------------

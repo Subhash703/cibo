@@ -46,13 +46,7 @@ struct DashboardScreen: View {
     }
 
     private var avatar: some View {
-        ZStack {
-            Circle().fill(CiboColor.surfaceContainerHigh)
-            Text(initials)
-                .font(CiboFont.body(13, weight: .bold))
-                .foregroundStyle(CiboColor.onSurface)
-        }
-        .frame(width: 36, height: 36)
+        CiboAvatar(user: auth.user, size: 36)
     }
 
     private func resolveFirstName() -> String {
@@ -65,15 +59,6 @@ struct DashboardScreen: View {
             if let local = parts.first { return String(local) }
         }
         return "there"
-    }
-
-    private var initials: String {
-        let name = auth.user?.name ?? auth.user?.email ?? "C"
-        let parts = name.split(separator: " ")
-        if parts.count >= 2, let f = parts.first?.first, let s = parts[1].first {
-            return "\(f)\(s)".uppercased()
-        }
-        return String(name.prefix(2)).uppercased()
     }
 
     private var greeting: some View {

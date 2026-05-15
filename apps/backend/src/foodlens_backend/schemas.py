@@ -129,6 +129,16 @@ class UserPublic(BaseModel):
     # via [daily_kcal_target].
     suggested_kcal_target: int | None = None
 
+    # User-stated goal + AI-generated, personalised insight about it.
+    # `goal_insight` is regenerated whenever the user updates metrics or
+    # picks a new goal — see main.update_me.
+    goal: str | None = None
+    goal_insight: str | None = None
+
+    # True when the user has uploaded an avatar. Clients render
+    # GET /avatars/{user_id} when this is set; otherwise show initials.
+    has_avatar: bool = False
+
 
 class AuthResponse(BaseModel):
     """Response to /auth/register and /auth/login.
@@ -148,6 +158,7 @@ class ProfileUpdate(BaseModel):
     weight_kg: float | None = Field(default=None, ge=20, le=300)
     height_cm: float | None = Field(default=None, ge=80, le=250)
     activity_level: str | None = None
+    goal: str | None = None  # one of insights.VALID_GOALS
 
 
 class MealLogRequest(BaseModel):

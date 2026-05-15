@@ -77,6 +77,9 @@ data class UserPublic(
     val heightCm: Float? = null,
     val activityLevel: String? = null,
     val suggestedKcalTarget: Int? = null,
+    val goal: String? = null,
+    val goalInsight: String? = null,
+    val hasAvatar: Boolean = false,
 )
 
 fun UserPublic.toProfile(): `in`.foodlens.app.auth.UserProfile = `in`.foodlens.app.auth.UserProfile(
@@ -90,6 +93,9 @@ fun UserPublic.toProfile(): `in`.foodlens.app.auth.UserProfile = `in`.foodlens.a
     heightCm = heightCm,
     activityLevel = activityLevel,
     suggestedKcalTarget = suggestedKcalTarget,
+    goal = goal,
+    goalInsight = goalInsight,
+    hasAvatar = hasAvatar,
 )
 
 @Serializable
@@ -106,6 +112,7 @@ data class ProfileUpdate(
     val weightKg: Float? = null,
     val heightCm: Float? = null,
     val activityLevel: String? = null,
+    val goal: String? = null,
 )
 
 @Serializable
@@ -145,7 +152,17 @@ data class MealLogPublic(
     val items: List<MatchedItem> = emptyList(),
 )
 
-class AnalyzeClient(private val baseUrl: String) {
+class AnalyzeClient(val baseUrl: String) {
+
+    /** Resolve a `picture` field (full URL or `/avatars/...` path) into an
+     *  absolute URL renderable by Coil. Returns null when picture is empty. */
+    fun resolvePictureUrl(picture: String?): String? {
+        if (picture.isNullOrEmpty()) return null
+        if (picture.startsWith("http://") || picture.startsWith("https://")) return picture
+        val base = baseUrl.trimEnd('/')
+        val path = if (picture.startsWith("/")) picture else "/$picture"
+        return base + path
+    }
 
     private val http = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
@@ -263,6 +280,20 @@ class AnalyzeClient(private val baseUrl: String) {
                 .post(body)
                 .build()
             execute(httpRequest, DailySummary.serializer())
+        }
+
+    suspend fun uploadAvatar(idToken: String, jpegBytes: ByteArray): UserPublic =
+        withContext(Dispatchers.IO) {
+            val body = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("image", "avatar.jpg", jpegBytes.toRequestBody(JPEG_MEDIA))
+                .build()
+            val request = Request.Builder()
+                .url("$baseUrl/me/avatar")
+                .header("Authorization", "Bearer $idToken")
+                .post(body)
+                .build()
+            execute(request, UserPublic.serializer())
         }
 
     /**

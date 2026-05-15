@@ -931,7 +931,7 @@ private fun launchCamera(
     launcher.launch(uri)
 }
 
-private suspend fun readUriAsJpeg(
+internal suspend fun readUriAsJpeg(
     context: Context,
     uri: Uri,
     maxDim: Int = 1024,

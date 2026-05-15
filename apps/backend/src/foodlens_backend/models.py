@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, LargeBinary, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -42,6 +42,18 @@ class User(Base):
     weight_kg: Mapped[float | None] = mapped_column(nullable=True, default=None)
     height_cm: Mapped[float | None] = mapped_column(nullable=True, default=None)
     activity_level: Mapped[str | None] = mapped_column(String(16), nullable=True, default=None)
+
+    # User-stated goal (lose_weight, build_muscle, …). Drives the
+    # personalised AI insight shown on the Goal card.
+    goal: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)
+    goal_insight: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
+    goal_insight_at: Mapped[datetime | None] = mapped_column(nullable=True, default=None)
+
+    # Avatar — stored in DB so it survives Render's ephemeral disk.
+    # Served from GET /avatars/{user_id} (public, no auth).
+    avatar_bytes: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, default=None)
+    avatar_content_type: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)
+    avatar_updated_at: Mapped[datetime | None] = mapped_column(nullable=True, default=None)
 
 
 class MealLog(Base):

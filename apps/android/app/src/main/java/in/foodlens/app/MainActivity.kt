@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -29,6 +30,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
@@ -40,6 +42,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -128,6 +131,7 @@ class MainActivity : ComponentActivity() {
                             overlayGranted = overlayGranted,
                             usageGranted = usageGranted,
                             onAdvance = { step = nextStep(step) },
+                            onBack = { step = previousStep(step) },
                             onRequestOverlay = ::requestOverlayPermission,
                             onRequestUsage = ::requestUsageAccess,
                             onRecheck = ::refreshPermissions,
@@ -262,6 +266,14 @@ class MainActivity : ComponentActivity() {
                                     profileBusy = false
                                 }
                             },
+                            onUploadAvatar = { uri ->
+                                profileBusy = true
+                                coroutineScope.launch {
+                                    runCatching { uploadAvatar(uri) }
+                                        .onFailure { showAvatarError(it) }
+                                    profileBusy = false
+                                }
+                            },
                             onBack = { screen = AppScreen.MAIN },
                         )
                     }
@@ -308,9 +320,38 @@ class MainActivity : ComponentActivity() {
                 weightKg = updated.weightKg,
                 heightCm = updated.heightCm,
                 activityLevel = updated.activityLevel,
+                goal = updated.goal,
             ),
         )
         foodLensApp.authState.setProfile(server.toProfile())
+    }
+
+    private suspend fun uploadAvatar(uri: android.net.Uri) {
+        val token = foodLensApp.authState.idToken ?: error("Not signed in")
+        val jpeg = readUriAsJpeg(this, uri)
+        val server = analyzeClient.uploadAvatar(idToken = token, jpegBytes = jpeg)
+        foodLensApp.authState.setProfile(server.toProfile())
+    }
+
+    private fun showAvatarError(t: Throwable) {
+        val raw = t.message.orEmpty()
+        val friendly = when {
+            raw.contains("Not Found", ignoreCase = true) ->
+                "Photo upload isn't available yet — the server hasn't been updated."
+            raw.contains("too large", ignoreCase = true) ->
+                "Photo is too large. Pick one under 2 MB."
+            raw.contains("Empty image", ignoreCase = true) ->
+                "Couldn't read that photo. Pick a different one."
+            raw.contains("Unauthorized", ignoreCase = true) || raw.contains("401") ->
+                "Please sign in again."
+            raw.contains("timed out", ignoreCase = true) ||
+                raw.contains("connection", ignoreCase = true) ||
+                raw.contains("Unable to resolve", ignoreCase = true) ->
+                "Couldn't reach Cibo. Check your connection and try again."
+            raw.isBlank() -> "Couldn't upload photo. Please try again."
+            else -> raw
+        }
+        Toast.makeText(this, friendly, Toast.LENGTH_LONG).show()
     }
 
     private fun refreshPermissions() {
@@ -371,6 +412,15 @@ class MainActivity : ComponentActivity() {
         OnboardingStep.PermissionUsage -> OnboardingStep.Ready
         OnboardingStep.Ready -> OnboardingStep.Ready
     }
+
+    private fun previousStep(current: OnboardingStep): OnboardingStep = when (current) {
+        OnboardingStep.Welcome -> OnboardingStep.Welcome
+        OnboardingStep.HowItWorks -> OnboardingStep.Welcome
+        OnboardingStep.PermissionOverlay -> OnboardingStep.HowItWorks
+        OnboardingStep.PermissionUsage ->
+            if (overlayGranted) OnboardingStep.HowItWorks else OnboardingStep.PermissionOverlay
+        OnboardingStep.Ready -> OnboardingStep.HowItWorks
+    }
 }
 
 @Composable
@@ -379,18 +429,47 @@ private fun OnboardingScreen(
     overlayGranted: Boolean,
     usageGranted: Boolean,
     onAdvance: () -> Unit,
+    onBack: () -> Unit,
     onRequestOverlay: () -> Unit,
     onRequestUsage: () -> Unit,
     onRecheck: () -> Unit,
     onStart: () -> Unit,
 ) {
+    // Hardware/system back button maps to going to previous step.
+    androidx.activity.compose.BackHandler(enabled = step != OnboardingStep.Welcome) { onBack() }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        StepIndicator(step)
+        // Compact back chevron sits inline with the page indicator —
+        // mirrors the iOS toolbar feel without taking a full row.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (step != OnboardingStep.Welcome) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            } else {
+                Spacer(Modifier.size(36.dp))
+            }
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                StepIndicator(step)
+            }
+            Spacer(Modifier.size(36.dp))
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()

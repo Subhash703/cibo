@@ -71,4 +71,6 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    // Coil for AsyncImage — used by CiboAvatar to render uploaded photos.
+    implementation("io.coil-kt:coil-compose:2.7.0")
 }

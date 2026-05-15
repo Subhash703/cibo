@@ -78,6 +78,28 @@ final class AuthStore: ObservableObject {
         }
     }
 
+    /// Upload a new avatar image. Updates `user.picture` to the new URL
+    /// (server returns it on success).
+    func uploadAvatar(jpeg: Data) async {
+        guard let token else { return }
+        do {
+            let updated = try await AnalyzeClient.shared.uploadAvatar(token: token, jpeg: jpeg)
+            self.user = updated
+        } catch {
+            self.lastError = error.localizedDescription
+        }
+    }
+
+    func deleteAvatar() async {
+        guard let token else { return }
+        do {
+            let updated = try await AnalyzeClient.shared.deleteAvatar(token: token)
+            self.user = updated
+        } catch {
+            self.lastError = error.localizedDescription
+        }
+    }
+
     private func runAuth(_ op: () async throws -> AuthResponse) async {
         lastError = nil
         do {

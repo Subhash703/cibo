@@ -10,6 +10,7 @@ struct ProfileEditSheet: View {
     @State private var weightKg: Double = 70
     @State private var heightCm: Double = 170
     @State private var activity: String = "moderate"
+    @State private var goal: String = "stay_healthy"
     @State private var saving = false
 
     private let activityLevels: [(id: String, label: String)] = [
@@ -74,9 +75,19 @@ struct ProfileEditSheet: View {
                             }
                         }
 
+                        sectionHeader("Your goal")
+                        FlowLayout(spacing: 8) {
+                            ForEach(CiboGoals, id: \.id) { g in
+                                ActivityChip(
+                                    label: g.label,
+                                    selected: goal == g.id
+                                ) { goal = g.id }
+                            }
+                        }
+
                         InsightCard(
                             label: "WHY THIS MATTERS",
-                            text: "Cibo uses these to compute your daily kcal target and personalise every plate verdict against your body's needs."
+                            text: "Cibo uses your body stats and chosen goal to generate a personal daily insight you'll see on the Goal card."
                         )
 
                         if let err = auth.lastError {
@@ -153,6 +164,7 @@ struct ProfileEditSheet: View {
         if let w = auth.user?.weightKg { weightKg = w }
         if let h = auth.user?.heightCm { heightCm = h }
         if let a = auth.user?.activityLevel { activity = a }
+        if let g = auth.user?.goal { goal = g }
     }
 
     private func save() async {
@@ -164,7 +176,8 @@ struct ProfileEditSheet: View {
             sex: sex,
             weightKg: weightKg,
             heightCm: heightCm,
-            activityLevel: activity
+            activityLevel: activity,
+            goal: goal
         )
         await auth.updateProfile(update)
         if auth.lastError == nil { dismiss() }

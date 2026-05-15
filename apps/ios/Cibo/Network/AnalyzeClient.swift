@@ -90,6 +90,28 @@ actor AnalyzeClient {
         try await post("/meal-logs", body: request, token: token)
     }
 
+    // MARK: Avatar
+
+    func uploadAvatar(token: String, jpeg: Data) async throws -> UserPublic {
+        try await uploadImage("/me/avatar", field: "image", filename: "avatar.jpg",
+                              data: jpeg, token: token)
+    }
+
+    func deleteAvatar(token: String) async throws -> UserPublic {
+        var req = URLRequest(url: baseURL.appendingPathComponent("/me/avatar"))
+        req.httpMethod = "DELETE"
+        attach(token: token, to: &req)
+        return try await execute(req)
+    }
+
+    /// Resolve a `picture` field (which may be a full URL or a server-
+    /// relative `/avatars/...` path) to an absolute URL clients can render.
+    nonisolated func resolvePicture(_ raw: String?) -> URL? {
+        guard let raw, !raw.isEmpty else { return nil }
+        if raw.hasPrefix("http://") || raw.hasPrefix("https://") { return URL(string: raw) }
+        return URL(string: raw, relativeTo: baseURL)?.absoluteURL
+    }
+
     // MARK: Vision
 
     func analyzePlate(token: String, jpeg: Data) async throws -> PlateAnalyzeResponse {
