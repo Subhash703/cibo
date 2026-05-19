@@ -50,6 +50,15 @@ class AnalysisCore(BaseModel):
     suggestions: list[Suggestion]
     items: list[MatchedItem] = Field(default_factory=list)
     unmatched: list[str] = Field(default_factory=list)
+    restaurant_name: str | None = Field(
+        default=None,
+        description=(
+            "Restaurant / store name as shown at the top of the cart screen "
+            "(e.g. 'Punjab Grill Express'). Drives the swap deep-link — food "
+            "apps lock the cart to one restaurant, so the overlay needs to "
+            "return the user to *this* restaurant, not search globally."
+        ),
+    )
 
 
 class CoachVerdict(BaseModel):

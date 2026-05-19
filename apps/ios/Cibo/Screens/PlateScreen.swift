@@ -37,7 +37,7 @@ struct PlateScreen: View {
             case .error(let m):        ErrorView(message: m, retry: { state = .idle })
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: pickerItem) { _, item in
             guard let item else { return }
             Task { await loadFromPicker(item) }

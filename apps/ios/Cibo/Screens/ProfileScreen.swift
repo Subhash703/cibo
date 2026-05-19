@@ -29,7 +29,7 @@ struct ProfileScreen: View {
                 .padding(.bottom, CiboSpacing.xl)
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear { goal = Double(auth.user?.dailyKcalTarget ?? 2000) }
         .sheet(isPresented: $showEditSheet) { ProfileEditSheet() }
         .onChange(of: avatarPickerItem) { _, item in

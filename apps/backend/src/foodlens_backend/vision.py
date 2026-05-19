@@ -58,6 +58,12 @@ and unmatched=[].
 Always set `unmatched` to an empty array — you have visual context, so
 nothing should be unmatched.
 
+Also extract `restaurant_name`: the restaurant or store name as shown at
+the top of the cart screen (e.g. "Punjab Grill Express", "Domino's",
+"Blinkit"). This is the strip that says where the order is coming from.
+Set null only when the screenshot doesn't show the header clearly. Don't
+include suffixes like "4.3 ★" or "28 min" — just the name.
+
 Realistic portion guide for India:
 - Domino's medium pizza: 800-1100 kcal whole. Pizza Mania (small): 600-700.
 - Biryani: 450-620 kcal per restaurant serving.

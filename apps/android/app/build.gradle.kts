@@ -22,7 +22,7 @@ android {
         // Production backend on Render (free tier; 90-day Postgres clock —
         // calendar a reminder to migrate or upgrade by day 75).
         //
-        // For local backend dev, swap to one of:
+        // For local backend dev, swap to one of:`
         //   • USB:                 "http://localhost:8000"  + `adb reverse tcp:8000 tcp:8000`
         //   • Same-LAN no isolation: "http://<mac-lan-ip>:8000"
         //   • Emulator:            "http://10.0.2.2:8000"

@@ -50,6 +50,7 @@ data class AnalyzeResponse(
     val items: List<MatchedItem> = emptyList(),
     val unmatched: List<String> = emptyList(),
     val dailySummary: DailySummary? = null,
+    val restaurantName: String? = null,
 )
 
 @Serializable

@@ -23,7 +23,7 @@ struct DashboardScreen: View {
             }
             .refreshable { await auth.refreshToday() }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .task { await auth.refreshToday() }
         .sheet(isPresented: $showShortcutSheet) { ShortcutSetupSheet() }
     }

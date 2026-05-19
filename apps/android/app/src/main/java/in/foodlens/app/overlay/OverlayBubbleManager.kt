@@ -1,13 +1,18 @@
 package `in`.foodlens.app.overlay
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -18,9 +23,14 @@ import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.res.ResourcesCompat
 import `in`.foodlens.app.MainActivity
+import `in`.foodlens.app.R
+import `in`.foodlens.app.foreground.ForegroundAppPoller
 import `in`.foodlens.app.network.AnalyzeResponse
 import `in`.foodlens.app.network.DailySummary
 import `in`.foodlens.app.network.MatchedItem
@@ -63,6 +73,20 @@ class OverlayBubbleManager(private val appContext: Context) {
 
     private var collapsedX = dp(16f).toInt()
     private var collapsedY = dp(200f).toInt()
+
+    // Lazy-loaded brand typefaces (variable fonts in res/font/).
+    private val jakarta: Typeface by lazy {
+        ResourcesCompat.getFont(appContext, R.font.plus_jakarta_sans) ?: Typeface.DEFAULT
+    }
+    private val jakartaBold: Typeface by lazy {
+        Typeface.create(jakarta, Typeface.BOLD)
+    }
+    private val fraunces: Typeface by lazy {
+        ResourcesCompat.getFont(appContext, R.font.fraunces) ?: Typeface.SERIF
+    }
+    private val frauncesItalic: Typeface by lazy {
+        Typeface.create(fraunces, Typeface.ITALIC)
+    }
 
     // Loading ticker state.
     private var loadingPhaseTv: TextView? = null
@@ -224,6 +248,11 @@ class OverlayBubbleManager(private val appContext: Context) {
             .setStartDelay(CROSSFADE_IN_DELAY_MS)
             .start()
 
+        // Whether this morph is expanding (going to a > collapsed surface).
+        // We snap the *expanded* window to WRAP_CONTENT on animation-end so
+        // the visible card never carries extra empty space when our measure
+        // pass over-estimates (which it does for some layouts).
+        val isExpanded = targetW > collapsedSizePx
         sizeAnimator?.cancel()
         sizeAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = MORPH_DURATION_MS
@@ -238,17 +267,27 @@ class OverlayBubbleManager(private val appContext: Context) {
                     lerpF(startRadius, targetRadius, t)
                 runCatching { wm.updateViewLayout(root, params) }
             }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!isExpanded) return
+                    params.width = targetW
+                    params.height = WindowManager.LayoutParams.WRAP_CONTENT
+                    runCatching { wm.updateViewLayout(root, params) }
+                }
+            })
             start()
         }
     }
 
     private fun ensureRoot(): FrameLayout {
         rootView?.let { return it }
+        // Background is transparent; each render method colors its own
+        // content (glass bubble for collapsed, warm cream card for expanded)
+        // so the same window can morph between very different surfaces.
         val root = FrameLayout(appContext).apply {
             background = GradientDrawable().apply {
                 cornerRadius = collapsedCornerRadius
-                setColor(0xFF15202B.toInt())
-                setStroke(dp(1f).toInt(), 0xFF1ED4B6.toInt())
+                setColor(Color.TRANSPARENT)
             }
             elevation = dp(8f)
         }
@@ -282,28 +321,31 @@ class OverlayBubbleManager(private val appContext: Context) {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun renderCollapsed(): View {
+        // Glassy translucent navy disc with a faint teal hairline + the
+        // Cibo logo at center. Sits over the host app without competing
+        // for attention.
         val container = FrameLayout(appContext).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
             )
-        }
-        val ai = TextView(appContext).apply {
-            text = "C"
-            setTypeface(Typeface.DEFAULT_BOLD)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
-            gravity = Gravity.CENTER
-            setTextColor(Color.parseColor("#0F1722"))
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#1ED4B6"))
+                setColor(GLASS_NAVY_TRANSLUCENT)
+                setStroke(dp(1f).toInt(), GLASS_STROKE_TEAL)
             }
+        }
+        val logo = ImageView(appContext).apply {
+            setImageResource(R.drawable.cibo_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            val pad = dp(12f).toInt()
+            setPadding(pad, pad, pad, pad)
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
             )
         }
-        container.addView(ai)
+        container.addView(logo)
         container.setOnTouchListener(
             DragAndTapListener(
                 params = { rootParams!! },
@@ -321,28 +363,38 @@ class OverlayBubbleManager(private val appContext: Context) {
     }
 
     private fun renderLoading(): View {
-        val card = card()
-        card.addView(header(title = "Cibo"))
+        val card = creamCard()
+        card.addView(eyebrowRow(label = "READING…"))
 
-        val phase = textView("Looking at your cart…", titleSize = 16f, bold = true)
+        val phase = textView(
+            "Looking at your cart…",
+            titleSize = 17f,
+            color = INK,
+        ).apply { setTypeface(fraunces, Typeface.ITALIC) }
         loadingPhaseTv = phase
         card.addView(phase)
 
-        // Static evocative subtitle — mirrors the Plate tab's
-        // "Reading colours, textures, portions" rhythm. Gives the user
-        // something to read during the 2-3s Gemini round-trip.
         card.addView(
             textView(
                 "Reading items, portions, totals.",
                 titleSize = 13f,
-                subdued = true,
-            ),
+                color = INK_SUBDUED,
+            ).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(4f).toInt(); bottomMargin = dp(10f).toInt() }
+            },
         )
 
         card.addView(spinnerDots())
 
-        card.addView(divider())
-        val tip = textView("💡 ${LOADING_TIPS[0]}", titleSize = 13f, subdued = true)
+        val tip = textView("💡 ${LOADING_TIPS[0]}", titleSize = 12f, color = INK_SUBDUED).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(10f).toInt() }
+        }
         loadingTipTv = tip
         card.addView(tip)
 
@@ -350,67 +402,36 @@ class OverlayBubbleManager(private val appContext: Context) {
     }
 
     private fun renderError(message: String): View {
-        val card = card()
-        card.addView(header(title = "Couldn't analyze"))
-        card.addView(textView(message, subdued = true))
+        val card = creamCard()
+        card.addView(eyebrowRow(label = "OOPS"))
+        card.addView(textView("Couldn't read this cart.",
+            titleSize = 18f, color = INK).apply {
+            setTypeface(fraunces, Typeface.ITALIC)
+        })
+        card.addView(textView(message, titleSize = 13f, color = INK_SUBDUED).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(6f).toInt() }
+        })
         return card
     }
 
     private fun renderResult(r: AnalyzeResponse): View {
-        val card = card()
+        // Option C layout: eyebrow → observational quote → compact KCAL/macro
+        // strip → SWAP-as-protagonist → action buttons.
+        val card = creamCard()
 
-        card.addView(header(title = "Cibo"))
-        card.addView(textView("Health Score", subdued = true))
-        card.addView(
-            textView(
-                "${r.healthScore} · ${r.healthLabel}",
-                titleSize = 22f,
-                color = scoreColor(r.healthScore),
-                bold = true,
-            ),
-        )
+        card.addView(eyebrowRow(label = labelFromScore(r.healthScore)))
+        card.addView(quoteText(observationalCopy(r)))
+        card.addView(compactStrip(r))
 
-        val macros = LinearLayout(appContext).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(10f).toInt(), 0, dp(10f).toInt())
-        }
-        macros.addView(macroChip("${r.macros.kcal}", "kcal"))
-        macros.addView(macroChip("${r.macros.proteinG}g", "protein"))
-        macros.addView(macroChip("${r.macros.fatG}g", "fat"))
-        card.addView(macros)
-
-        card.addView(textView("${r.percentDailyKcal}% of your daily intake", subdued = true))
-
-        // Daily-tracking section: shown when the user is signed in (backend
-        // populated daily_summary). The bar projects today's consumed +
-        // *this cart's* kcal so the user sees the impact of confirming.
-        r.dailySummary?.let { summary ->
-            card.addView(divider())
-            card.addView(dailySummarySection(summary, projectedAdd = r.macros.kcal))
+        r.suggestions.firstOrNull()?.let { suggestion ->
+            card.addView(swapHero(suggestion, r.restaurantName))
         }
 
-        if (r.items.isNotEmpty()) {
-            card.addView(divider())
-            for (item in r.items) {
-                card.addView(itemRow(item))
-            }
-        }
-
-        if (r.unmatched.isNotEmpty()) {
-            card.addView(divider())
-            card.addView(textView("AI couldn't identify:", titleSize = 12f, subdued = true))
-            card.addView(textView(r.unmatched.joinToString(" · "), titleSize = 12f, subdued = true))
-        }
-
-        r.suggestions.firstOrNull()?.let {
-            card.addView(divider())
-            card.addView(textView("💡 ${it.text}", titleSize = 14f))
-        }
-
-        // Confirm-or-skip buttons (signed in) OR sign-in prompt (signed out).
-        card.addView(divider())
         if (r.dailySummary != null) {
-            card.addView(actionButtons(r))
+            card.addView(actionRow(r))
         } else {
             card.addView(signInPrompt())
         }
@@ -419,23 +440,26 @@ class OverlayBubbleManager(private val appContext: Context) {
     }
 
     private fun renderConfirmed(s: DailySummary): View {
-        val card = card()
-        card.addView(header(title = "Cibo"))
+        val card = creamCard()
+        card.addView(eyebrowRow(label = "ADDED"))
 
-        val tick = textView(
-            "✓ Order logged",
+        card.addView(textView(
+            "On your day.",
             titleSize = 22f,
-            bold = true,
-            color = 0xFF34D399.toInt(),
-        )
-        card.addView(tick)
+            color = INK,
+        ).apply { setTypeface(frauncesItalic) })
 
         card.addView(
             textView(
-                "${s.consumedKcal} kcal consumed · ${s.remainingKcal} kcal left today",
+                "${s.consumedKcal} kcal so far · ${s.remainingKcal} kcal left today",
                 titleSize = 13f,
-                subdued = true,
-            ),
+                color = INK_SUBDUED,
+            ).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(4f).toInt(); bottomMargin = dp(8f).toInt() }
+            },
         )
 
         val progress = (s.consumedKcal.toFloat() / s.dailyKcalTarget).coerceIn(0f, 1f)
@@ -444,9 +468,14 @@ class OverlayBubbleManager(private val appContext: Context) {
         card.addView(
             textView(
                 "Goal: ${s.dailyKcalTarget} kcal · ${s.logCount} order${if (s.logCount == 1) "" else "s"} today",
-                titleSize = 12f,
-                subdued = true,
-            ),
+                titleSize = 11f,
+                color = INK_SUBDUED,
+            ).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(6f).toInt() }
+            },
         )
 
         return card
@@ -486,44 +515,333 @@ class OverlayBubbleManager(private val appContext: Context) {
         return container
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun actionButtons(response: AnalyzeResponse): View {
+    // ──────────────── Design-C builders ────────────────
+
+    private fun creamCard(): LinearLayout {
+        return LinearLayout(appContext).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                cornerRadius = dp(20f)
+                setColor(CREAM_BG)
+            }
+            setPadding(dp(20f).toInt(), dp(16f).toInt(), dp(20f).toInt(), dp(16f).toInt())
+            minimumWidth = dp(320f).toInt()
+        }
+    }
+
+    private fun eyebrowRow(label: String): View {
         val row = LinearLayout(appContext).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(8f).toInt(), 0, 0)
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(10f).toInt() }
         }
-        val skip = TextView(appContext).apply {
-            text = "No, just checking"
-            setTextColor(0xFF92A0B0.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            setPadding(dp(8f).toInt(), dp(12f).toInt(), dp(8f).toInt(), dp(12f).toInt())
+        val logo = ImageView(appContext).apply {
+            setImageResource(R.drawable.cibo_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            layoutParams = LinearLayout.LayoutParams(dp(18f).toInt(), dp(18f).toInt()).apply {
+                marginEnd = dp(6f).toInt()
+            }
+        }
+        val word = TextView(appContext).apply {
+            text = "cibo"
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextColor(INK)
+        }
+        val pill = TextView(appContext).apply {
+            text = label
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+            letterSpacing = 0.12f
+            setTextColor(INK)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(999f)
+                setColor(PILL_BG)
+            }
+            setPadding(dp(8f).toInt(), dp(3f).toInt(), dp(8f).toInt(), dp(3f).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { marginStart = dp(8f).toInt() }
+        }
+        val spacer = View(appContext).apply {
+            layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+        }
+        val close = TextView(appContext).apply {
+            text = "✕"
+            setTextColor(INK_SUBDUED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            setPadding(dp(8f).toInt(), 0, dp(2f).toInt(), 0)
             setOnClickListener { showCollapsed() }
+        }
+        row.addView(logo); row.addView(word); row.addView(pill); row.addView(spacer); row.addView(close)
+        return row
+    }
+
+    private fun quoteText(text: String): View {
+        return TextView(appContext).apply {
+            this.text = "“$text”"
+            setTypeface(frauncesItalic)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            setTextColor(INK)
+            setLineSpacing(0f, 1.2f)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(12f).toInt() }
+        }
+    }
+
+    private fun compactStrip(r: AnalyzeResponse): View {
+        // Two stacked rows so weights can't squeeze either the kcal number
+        // (was clipping the Fraunces descenders) or the macros (was forcing
+        // "KCAL" to wrap as "KCA / L" on narrow screens).
+        val container = LinearLayout(appContext).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                cornerRadius = dp(14f)
+                setColor(STRIP_BG)
+            }
+            setPadding(dp(14f).toInt(), dp(10f).toInt(), dp(14f).toInt(), dp(10f).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(12f).toInt() }
+        }
+
+        // Row 1: big KCAL number (+ "KCAL" suffix) on the left, score pill on the right.
+        val topRow = LinearLayout(appContext).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+        }
+        val numLabel = LinearLayout(appContext).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.BOTTOM
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-        val confirm = TextView(appContext).apply {
-            text = "Add to my day"
-            setTextColor(0xFF0F1722.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            setTypeface(Typeface.DEFAULT_BOLD)
+        numLabel.addView(TextView(appContext).apply {
+            text = "${r.macros.kcal}"
+            setTypeface(fraunces, Typeface.BOLD)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+            setTextColor(INK)
+            includeFontPadding = false
+        })
+        numLabel.addView(TextView(appContext).apply {
+            text = " KCAL"
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+            letterSpacing = 0.15f
+            setTextColor(INK_SUBDUED)
+            setPadding(dp(4f).toInt(), 0, 0, dp(3f).toInt())
+            maxLines = 1
+        })
+        topRow.addView(numLabel)
+
+        topRow.addView(TextView(appContext).apply {
+            text = "${r.healthScore}"
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            setTextColor(INK)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(999f)
+                setColor(PILL_BG)
+            }
+            setPadding(dp(10f).toInt(), dp(4f).toInt(), dp(10f).toInt(), dp(4f).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { marginStart = dp(8f).toInt() }
+        })
+        container.addView(topRow)
+
+        // Row 2: macro dots, evenly spaced.
+        val macroRow = LinearLayout(appContext).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(6f).toInt(), 0, 0)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+        }
+        macroRow.addView(macroDot(MACRO_PROTEIN, "P${r.macros.proteinG}"))
+        macroRow.addView(macroDot(MACRO_FAT, "F${r.macros.fatG}"))
+        macroRow.addView(macroDot(MACRO_CARB, "C${r.macros.carbsG}"))
+        container.addView(macroRow)
+
+        return container
+    }
+
+    private fun macroDot(color: Int, label: String): View {
+        val row = LinearLayout(appContext).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, dp(8f).toInt(), 0)
+        }
+        row.addView(View(appContext).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(color)
+            }
+            layoutParams = LinearLayout.LayoutParams(dp(8f).toInt(), dp(8f).toInt()).apply {
+                marginEnd = dp(4f).toInt()
+            }
+        })
+        row.addView(TextView(appContext).apply {
+            text = label
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            setTextColor(INK)
+        })
+        return row
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun swapHero(
+        suggestion: `in`.foodlens.app.network.Suggestion,
+        restaurantName: String?,
+    ): View {
+        val card = LinearLayout(appContext).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = GradientDrawable().apply {
+                cornerRadius = dp(14f)
+                setColor(Color.WHITE)
+                setStroke(dp(1f).toInt(), 0x14000000)
+            }
+            setPadding(dp(10f).toInt(), dp(10f).toInt(), dp(14f).toInt(), dp(10f).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(14f).toInt() }
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { onSwapTap(suggestion.text, restaurantName) }
+        }
+
+        // Photo placeholder — Gemini doesn't hand us a URL today, so a warm
+        // beige tile reads as "food image" without falsely promising one.
+        card.addView(View(appContext).apply {
             background = GradientDrawable().apply {
                 cornerRadius = dp(10f)
-                setColor(0xFF1ED4B6.toInt())
+                setColor(PHOTO_PLACEHOLDER)
             }
-            setPadding(dp(16f).toInt(), dp(12f).toInt(), dp(16f).toInt(), dp(12f).toInt())
-            gravity = Gravity.CENTER
-            setOnClickListener { onConfirmOrder(response) }
+            layoutParams = LinearLayout.LayoutParams(dp(48f).toInt(), dp(48f).toInt()).apply {
+                marginEnd = dp(12f).toInt()
+            }
+        })
+
+        val col = LinearLayout(appContext).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
+        col.addView(TextView(appContext).apply {
+            text = "SWAP"
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 9f)
+            letterSpacing = 0.15f
+            setTextColor(INK_SUBDUED)
+        })
+        col.addView(TextView(appContext).apply {
+            text = suggestion.text
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextColor(INK)
+            setLineSpacing(0f, 1.1f)
+        })
+        if (suggestion.kcalDelta != 0) {
+            val deltaText = if (suggestion.kcalDelta < 0)
+                "${suggestion.kcalDelta} kcal"
+            else
+                "+${suggestion.kcalDelta} kcal"
+            col.addView(TextView(appContext).apply {
+                text = deltaText
+                setTypeface(jakartaBold)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                setTextColor(DELTA_GREEN_TEXT)
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(999f)
+                    setColor(DELTA_GREEN_BG)
+                }
+                setPadding(dp(8f).toInt(), dp(2f).toInt(), dp(8f).toInt(), dp(2f).toInt())
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(4f).toInt() }
+            })
+        }
+        card.addView(col)
+
+        card.addView(TextView(appContext).apply {
+            text = "Open →"
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setTextColor(ACCENT_GREEN)
+            setPadding(dp(8f).toInt(), 0, 0, 0)
+        })
+
+        return card
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun actionRow(r: AnalyzeResponse): View {
+        val row = LinearLayout(appContext).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+        }
+        val log = TextView(appContext).apply {
+            text = "Log to my day"
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextColor(CREAM_BG)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(999f)
+                setColor(INK)
+            }
+            gravity = Gravity.CENTER
+            setPadding(dp(16f).toInt(), dp(12f).toInt(), dp(16f).toInt(), dp(12f).toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f,
+            ).apply { marginEnd = dp(8f).toInt() }
+            setOnClickListener { onConfirmOrder(r) }
+        }
+        val skip = TextView(appContext).apply {
+            text = "Just looking"
+            setTypeface(jakartaBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextColor(INK)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(999f)
+                setColor(Color.TRANSPARENT)
+                setStroke(dp(1f).toInt(), 0x33000000)
+            }
+            gravity = Gravity.CENTER
+            setPadding(dp(16f).toInt(), dp(12f).toInt(), dp(16f).toInt(), dp(12f).toInt())
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            setOnClickListener { showCollapsed() }
+        }
+        row.addView(log)
         row.addView(skip)
-        row.addView(confirm)
         return row
     }
 
     private fun signInPrompt(): View {
         return TextView(appContext).apply {
             text = "Sign in to track today's intake →"
-            setTextColor(0xFF1ED4B6.toInt())
+            setTypeface(jakartaBold)
+            setTextColor(ACCENT_GREEN)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            setPadding(0, dp(8f).toInt(), 0, 0)
+            setPadding(0, dp(4f).toInt(), 0, dp(4f).toInt())
             setOnClickListener {
                 val intent = Intent(appContext, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -532,6 +850,135 @@ class OverlayBubbleManager(private val appContext: Context) {
                 showCollapsed()
             }
         }
+    }
+
+    // ──────────────── Score → label ────────────────
+
+    private fun labelFromScore(score: Int): String = when {
+        score >= 75 -> "GOOD PICK"
+        score >= 55 -> "FAIR PICK"
+        score >= 35 -> "HEAVIER"
+        else        -> "HEAVY MEAL"
+    }
+
+    private fun observationalCopy(r: AnalyzeResponse): String {
+        // Observe, don't grade — the design-C insight. Use macros + score
+        // to pick a warm, descriptive sentence. Avoids "you should…" tone.
+        val pHigh = r.macros.proteinG >= 30
+        val fHigh = r.macros.fatG >= 50
+        return when {
+            r.healthScore >= 75 && pHigh ->
+                "Solid cart. Protein's there, calories sit well in your day."
+            r.healthScore >= 55 && pHigh && fHigh ->
+                "Hearty cart. Protein's solid — one swap brings the fats down."
+            r.healthScore >= 55 ->
+                "Hearty pick. One quick upgrade lightens it without losing the meal."
+            else ->
+                "Heavier today. One smart swap pulls it back into a comfortable range."
+        }
+    }
+
+    // ──────────────── Swap deep-link / clipboard ────────────────
+
+    private fun onSwapTap(suggestionText: String, restaurantName: String?) {
+        val swap = extractSwapTarget(suggestionText)
+
+        // Always copy the swap term so the user can paste it directly in
+        // the restaurant's menu search box (food apps) or the host app's
+        // search bar (grocery apps).
+        val clip = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clip.setPrimaryClip(ClipData.newPlainText("Cibo swap", swap))
+
+        val foreground = runCatching {
+            ForegroundAppPoller.currentForegroundPackage(appContext)
+        }.getOrNull()
+
+        // Food-delivery apps lock the cart to ONE restaurant. So the swap
+        // has to come from that same restaurant's menu — searching globally
+        // would scatter the user across the wrong restaurants. Route them
+        // back to the named restaurant; the clipboard has the swap term
+        // for the menu's search box.
+        //
+        // Grocery / quick-commerce (Blinkit, BigBasket) have no restaurant
+        // concept, so an item-level search is the right destination.
+        val intent: Intent? = when {
+            isFoodDelivery(foreground) && !restaurantName.isNullOrBlank() ->
+                restaurantSearchIntent(foreground, restaurantName)
+            isGrocery(foreground) ->
+                itemSearchIntent(foreground, swap)
+            else -> null
+        }
+
+        val toastMsg = when {
+            intent != null && !restaurantName.isNullOrBlank() ->
+                "Search “$swap” on $restaurantName's menu — copied for you."
+            intent != null ->
+                "Search “$swap” — copied for you."
+            else ->
+                "Copied “$swap” — paste in the menu search."
+        }
+
+        if (intent != null && runCatching {
+                appContext.startActivity(intent.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+            }.isSuccess) {
+            // Show the toast after the app switch lands so the user sees it.
+            main.postDelayed({
+                Toast.makeText(appContext, toastMsg, Toast.LENGTH_LONG).show()
+            }, 500)
+            return
+        }
+
+        Toast.makeText(appContext, toastMsg, Toast.LENGTH_LONG).show()
+    }
+
+    private fun isFoodDelivery(packageName: String?): Boolean = packageName in setOf(
+        "in.swiggy.android",
+        "com.application.zomato",
+        "com.dominos", "com.dominos.app.android",
+        "com.mcdonalds.mobileapp",
+        "com.yum.kfc",
+        "com.ubercab.eats",
+        "com.dd.doordash",
+    )
+
+    private fun isGrocery(packageName: String?): Boolean = packageName in setOf(
+        "com.grofers.customerapp",   // Blinkit
+        "com.bigbasket.mobileapp",
+        "in.dunzo.user",
+    )
+
+    private fun extractSwapTarget(text: String): String {
+        val arrow = text.indexOfAny(charArrayOf('→', '➜', '➔'))
+        if (arrow > -1) {
+            return text.substring(arrow + 1)
+                .substringBefore('—').substringBefore('-').trim()
+        }
+        val forIdx = text.lowercase().indexOf(" for ")
+        if (forIdx > -1) {
+            return text.substring(forIdx + 5)
+                .substringBefore('—').substringBefore('-').trim()
+        }
+        return text.take(40).trim()
+    }
+
+    private fun restaurantSearchIntent(packageName: String?, restaurant: String): Intent? {
+        val encoded = Uri.encode(restaurant)
+        val url = when (packageName) {
+            "in.swiggy.android"       -> "https://www.swiggy.com/search?query=$encoded"
+            "com.application.zomato"  -> "https://www.zomato.com/search?q=$encoded"
+            else -> null
+        } ?: return null
+        return Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    }
+
+    private fun itemSearchIntent(packageName: String?, query: String): Intent? {
+        val encoded = Uri.encode(query)
+        val url = when (packageName) {
+            "com.grofers.customerapp"  -> "https://blinkit.com/s/?q=$encoded"
+            "com.bigbasket.mobileapp"  -> "https://www.bigbasket.com/ps/?q=$encoded"
+            else -> null
+        } ?: return null
+        return Intent(Intent.ACTION_VIEW, Uri.parse(url))
     }
 
     private fun progressBar(progress: Float): View {
@@ -726,6 +1173,26 @@ class OverlayBubbleManager(private val appContext: Context) {
         const val CROSSFADE_IN_DELAY_MS = 100L
         const val LOADING_TIP_INTERVAL_MS = 2200L
         const val CONFIRMED_AUTO_COLLAPSE_MS = 4500L
+
+        // Design-C overlay palette — warm cream card, dark navy ink,
+        // muted macro dots, soft delta-green pill for savings.
+        const val CREAM_BG          = 0xFFFAF6EE.toInt()
+        const val INK               = 0xFF0B1226.toInt()
+        const val INK_SUBDUED       = 0xFF6E7184.toInt()
+        const val STRIP_BG          = 0x0F000000  // ~6% black overlay on cream
+        const val PILL_BG           = 0xFFEDE3D0.toInt()
+        const val PHOTO_PLACEHOLDER = 0xFFDDD0BD.toInt()
+        const val ACCENT_GREEN      = 0xFF1C8F66.toInt()
+        const val DELTA_GREEN_BG    = 0xFFD2EDDF.toInt()
+        const val DELTA_GREEN_TEXT  = 0xFF0B5C3E.toInt()
+        const val MACRO_PROTEIN     = 0xFF6FAEE0.toInt()
+        const val MACRO_FAT         = 0xFFEAB360.toInt()
+        const val MACRO_CARB        = 0xFFB97A4E.toInt()
+
+        // Bubble (collapsed) glass tokens — translucent so the host app
+        // shows through without the bubble feeling like a sticker.
+        const val GLASS_NAVY_TRANSLUCENT = 0xCC0B1226.toInt()
+        const val GLASS_STROKE_TEAL      = 0x551ED4B6
 
         val LOADING_TIPS = listOf(
             "Roti = ~100 kcal. Naan = ~260 kcal. The bread choice matters.",

@@ -132,5 +132,25 @@ class ForegroundAppPoller(
         }
 
         fun settingsIntent(): Intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+
+        /** One-shot query for the most recently foregrounded app.
+         *  Used by [`in`.foodlens.app.overlay.OverlayBubbleManager] to route
+         *  swap deep-links into the food app the user is actually in right
+         *  now. Returns null when Usage Access isn't granted. */
+        fun currentForegroundPackage(context: Context): String? {
+            if (!hasPermission(context)) return null
+            val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val now = System.currentTimeMillis()
+            val events = usm.queryEvents(now - LOOKBACK_MS, now)
+            val event = UsageEvents.Event()
+            var lastPkg: String? = null
+            while (events.hasNextEvent()) {
+                events.getNextEvent(event)
+                if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                    lastPkg = event.packageName
+                }
+            }
+            return lastPkg
+        }
     }
 }
